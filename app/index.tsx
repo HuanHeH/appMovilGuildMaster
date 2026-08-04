@@ -15,5 +15,7 @@ export default function RootIndex() {
   if (role === 'Teacher') {
     return <Redirect href="/(teacher)/profe1" />;
   }
-  return <Redirect href="/(student)/alumno1" />;
+  if (role === 'Student') {
+    return <Redirect href="/(student)/alumno1" />;
+  }
 }

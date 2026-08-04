@@ -32,7 +32,10 @@ export default function LoginScreen() {
         accessToken: response.access_token,
       });
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Login failed');
+      const apiMessage = err?.response?.data?.message;
+      const status = err?.response?.status;
+      const fallback = err?.message ?? 'Login failed';
+      setError(status ? `${fallback} (HTTP ${status})` : apiMessage ?? fallback);
     } finally {
       setLoading(false);
     }
@@ -43,9 +46,6 @@ export default function LoginScreen() {
       <Stack.Screen options={{ title: 'Login', headerShown: false }} />
       <View className="w-full max-w-md gap-3">
         <Text variant="headlineMedium">GuildMaster Mobile</Text>
-        <Text variant="bodyMedium">
-          Login with your API account. Access is role-based (Student / Teacher / Admin).
-        </Text>
         <TextInput
           mode="outlined"
           label="Mail"
