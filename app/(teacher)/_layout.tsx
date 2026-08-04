@@ -1,6 +1,5 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
+import { Icon, IconButton } from 'react-native-paper';
 
 import { useAuthStore } from '@/store/auth-store';
 
@@ -22,9 +21,7 @@ export default function TeacherTabsLayout() {
       screenOptions={{
         headerShown: true,
         headerRight: () => (
-          <Pressable onPress={onLogout} style={{ marginRight: 16 }}>
-            <MaterialIcons name="logout" size={22} />
-          </Pressable>
+          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
         ),
       }}
     >
@@ -33,7 +30,7 @@ export default function TeacherTabsLayout() {
         options={{
           title: 'Profe1',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="groups" color={color} size={size} />
+            <Icon source="account-group" color={color} size={size} />
           ),
         }}
       />
@@ -42,7 +39,7 @@ export default function TeacherTabsLayout() {
         options={{
           title: 'Profe2',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="person" color={color} size={size} />
+            <Icon source="account" color={color} size={size} />
           ),
         }}
       />
@@ -51,7 +48,7 @@ export default function TeacherTabsLayout() {
         options={{
           title: 'Profe3',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="event" color={color} size={size} />
+            <Icon source="calendar" color={color} size={size} />
           ),
         }}
       />
