@@ -1,29 +1,19 @@
-import { Stack, Link } from 'expo-router';
+import { Redirect } from 'expo-router';
 
-import { View } from 'react-native';
+import { useAuthStore } from '@/store/auth-store';
 
-import { Button } from '@/components/Button';
-import { Container } from '@/components/Container';
-import { ScreenContent } from '@/components/ScreenContent';
+export default function RootIndex() {
+  const role = useAuthStore((state) => state.session?.role);
 
-export default function Home() {
-  return (
-    <View className={styles.container}>
-      <Stack.Screen options={{ title: 'Home' }} />
-      <Container>
-        <ScreenContent path="app/index.tsx" title="Home"></ScreenContent>
+  if (!role) {
+    return <Redirect href="/login" />;
+  }
 
-        <View className={styles.buttonWrapper}>
-          <Link href={{ pathname: '/details', params: { name: 'Dan' } }} asChild>
-            <Button title="Show Details" className="mx-6" />
-          </Link>
-        </View>
-      </Container>
-    </View>
-  );
+  if (role === 'Admin') {
+    return <Redirect href="/(admin)/admin1" />;
+  }
+  if (role === 'Teacher') {
+    return <Redirect href="/(teacher)/profe1" />;
+  }
+  return <Redirect href="/(student)/alumno1" />;
 }
-
-const styles = {
-  container: 'flex flex-1 bg-white',
-  buttonWrapper: 'mx-4',
-};

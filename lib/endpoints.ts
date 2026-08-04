@@ -1,0 +1,52 @@
+export const API_ENDPOINTS = {
+  users: {
+    list: '/users',
+    byId: (id: number) => `/users/${id}`,
+    create: '/users',
+    update: (id: number) => `/users/${id}`,
+    remove: (id: number) => `/users/${id}`,
+    login: '/users/login',
+  },
+  guilds: {
+    list: '/guilds',
+    byId: (id: number) => `/guilds/${id}`,
+    create: '/guilds',
+    update: (id: number) => `/guilds/${id}`,
+    remove: (id: number) => `/guilds/${id}`,
+  },
+  mentorships: {
+    list: '/mentorships',
+    byId: (userId: number, guildId: number) => `/mentorships/${userId}/${guildId}`,
+    create: '/mentorships',
+    update: (userId: number, guildId: number) => `/mentorships/${userId}/${guildId}`,
+    remove: (userId: number, guildId: number) => `/mentorships/${userId}/${guildId}`,
+  },
+  parties: {
+    list: '/parties',
+    byId: (id: number) => `/parties/${id}`,
+    create: '/parties',
+    update: (id: number) => `/parties/${id}`,
+    remove: (id: number) => `/parties/${id}`,
+  },
+  characters: {
+    list: '/characters',
+    byId: (id: number) => `/characters/${id}`,
+    create: '/characters',
+    update: (id: number) => `/characters/${id}`,
+    remove: (id: number) => `/characters/${id}`,
+  },
+  skills: {
+    list: '/skills',
+    byId: (id: number) => `/skills/${id}`,
+    create: '/skills',
+    update: (id: number) => `/skills/${id}`,
+    remove: (id: number) => `/skills/${id}`,
+  },
+  events: {
+    list: '/events',
+    byId: (id: number) => `/events/${id}`,
+    create: '/events',
+    update: (id: number) => `/events/${id}`,
+    remove: (id: number) => `/events/${id}`,
+  },
+} as const;
