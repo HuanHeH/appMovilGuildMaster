@@ -37,6 +37,8 @@ export interface Skill {
   description: string;
   aoe: SkillAoe;
   exp_cost: number;
+  /** True = debuff / hostile (future C5c / caps). */
+  debuff: boolean;
 }
 
 export interface GameEvent {
@@ -90,6 +92,10 @@ export function isRemoveExpSkill(skill: Skill) {
 
 export function isTeacherExpSkill(skill: Skill) {
   return isGrantExpSkill(skill) || isRemoveExpSkill(skill);
+}
+
+export function isDebuffSkill(skill: Skill | undefined | null): boolean {
+  return !!skill?.debuff;
 }
 
 export function isChangeJobSkill(skill: Skill) {
