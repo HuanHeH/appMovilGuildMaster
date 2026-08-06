@@ -1,16 +1,68 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
-import { Icon, IconButton } from 'react-native-paper';
+import { Alert, View } from 'react-native';
+import { Chip, Icon, IconButton, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/store/auth-store';
+import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
-export default function StudentTabsLayout() {
+function StudentHeader() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const role = useAuthStore((state) => state.session?.role);
+  const session = useAuthStore((state) => state.session);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const selectedCharacter = useCharacterStore(selectSelectedCharacter);
 
   const onLogout = () => {
     clearSession();
+    useCharacterStore.getState().setSelectedCharacterId(null);
+    useCharacterStore.getState().setCharacters([]);
     router.replace('/login');
+  };
+
+  return (
+    <View
+      style={{
+        paddingTop: insets.top,
+        paddingHorizontal: 12,
+        paddingBottom: 8,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        gap: 8,
+      }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text variant="titleMedium" style={{ flexShrink: 1, fontWeight: '700' }}>
+          Student GuildMaster
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Chip compact icon="account">
+            {session?.name ?? 'Unknown'}
+          </Chip>
+          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
+        </View>
+      </View>
+
+      {selectedCharacter ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Chip compact icon="sword-cross">
+            {`${selectedCharacter.name} · ${selectedCharacter.job} · Lv.${selectedCharacter.level} · ${selectedCharacter.exp} EXP`}
+          </Chip>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+export default function StudentTabsLayout() {
+  const role = useAuthStore((state) => state.session?.role);
+  const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
+
+  const requireCharacter = (e: { preventDefault: () => void }) => {
+    if (!selectedCharacterId) {
+      e.preventDefault();
+      Alert.alert('Select a character');
+    }
   };
 
   if (!role) return <Redirect href="/login" />;
@@ -19,40 +71,31 @@ export default function StudentTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerRight: () => (
-          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
-        ),
-      }}
-    >
+        header: () => <StudentHeader />,
+      }}>
       <Tabs.Screen
         name="alumno1"
         options={{
-          title: 'Alumno1',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="school" color={color} size={size} />
-          ),
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => <Icon source="account" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="alumno2"
         options={{
-          title: 'Alumno2',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="account" color={color} size={size} />
-          ),
+          title: 'Skills',
+          tabBarIcon: ({ color, size }) => <Icon source="sword" color={color} size={size} />,
         }}
+        listeners={{ tabPress: requireCharacter }}
       />
       <Tabs.Screen
         name="alumno3"
         options={{
-          title: 'Alumno3',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="calendar" color={color} size={size} />
-          ),
+          title: 'Events',
+          tabBarIcon: ({ color, size }) => <Icon source="calendar" color={color} size={size} />,
         }}
+        listeners={{ tabPress: requireCharacter }}
       />
     </Tabs>
   );
 }
-

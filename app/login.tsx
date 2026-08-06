@@ -32,10 +32,19 @@ export default function LoginScreen() {
         accessToken: response.access_token,
       });
     } catch (err: any) {
-      const apiMessage = err?.response?.data?.message;
-      const status = err?.response?.status;
-      const fallback = err?.message ?? 'Login failed';
-      setError(status ? `${fallback} (HTTP ${status})` : apiMessage ?? fallback);
+      const status = err?.response?.status as number | undefined;
+      const code = err?.code as string | undefined;
+      if (!err?.response && (code === 'ERR_NETWORK' || code === 'ECONNABORTED' || !status)) {
+        setError('No connection. Check your network or that the API is running.');
+      } else if (status === 401 || status === 403) {
+        setError('Invalid mail or password.');
+      } else if (status === 400) {
+        setError('Invalid login data.');
+      } else if (status && status >= 500) {
+        setError('Server error. Try again later.');
+      } else {
+        setError('Could not sign in. Try again.');
+      }
     } finally {
       setLoading(false);
     }
