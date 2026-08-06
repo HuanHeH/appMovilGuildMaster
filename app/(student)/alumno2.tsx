@@ -203,7 +203,7 @@ export default function SkillsScreen() {
     Alert.alert(
       'Confirm skill use',
       isDebuffSkill(skill)
-        ? `Use ${skill.name} for ${skill.exp_cost} EXP? Targets each gain ${Math.floor(skill.exp_cost / 2)} EXP (debuff).`
+        ? `Use ${skill.name} for ${skill.exp_cost} EXP? If approved, targets each gain ${Math.floor(skill.exp_cost / 2)} EXP (debuff).`
         : `Use ${skill.name} for ${skill.exp_cost} EXP?`,
       [
       { text: 'Cancel', style: 'cancel' },
