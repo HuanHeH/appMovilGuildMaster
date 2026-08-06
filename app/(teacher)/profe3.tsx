@@ -225,10 +225,10 @@ export default function TeacherEventsScreen() {
   const filteredEvents = useMemo(() => {
     const filtered = events.filter((event) => {
       const skill = skillById.get(event.skill_id);
-      // Lanzadas (por mí): Teacher EXP skills I cast
+      // Launched (by me): Teacher EXP skills I cast
       const launchedByMe =
         skill?.job === 'Teacher' && event.reviewed_by_user_id === session?.id;
-      // Revisadas (por mí): events I reviewed (have review date)
+      // Reviewed (by me): events I reviewed (have review date)
       const reviewedByMe =
         event.reviewed_by_user_id === session?.id && event.reviewed_at != null;
       const kindAllowed =
@@ -480,7 +480,10 @@ export default function TeacherEventsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
+        keyboardShouldPersistTaps="handled">
         <Card mode="outlined">
           <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
             <Text variant="titleSmall">Events · {guild ? guildLabel(guild) : 'Guild'}</Text>
@@ -491,10 +494,10 @@ export default function TeacherEventsScreen() {
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                 <Chip selected={kindFilters.includes('LAUNCHED')} onPress={() => toggleKind('LAUNCHED')}>
-                  Lanzadas (por mí)
+                  Launched (by me)
                 </Chip>
                 <Chip selected={kindFilters.includes('REVIEWED')} onPress={() => toggleKind('REVIEWED')}>
-                  Revisadas (por mí)
+                  Reviewed (by me)
                 </Chip>
               </View>
             </View>
@@ -507,24 +510,24 @@ export default function TeacherEventsScreen() {
                 <Chip
                   selected={statusFilters.includes('PENDING')}
                   onPress={() => toggleStatus('PENDING')}>
-                  Pendientes
+                  Pending
                 </Chip>
                 <Chip
                   selected={statusFilters.includes('APPROVED')}
                   onPress={() => toggleStatus('APPROVED')}>
-                  Aprobadas
+                  Approved
                 </Chip>
                 <Chip
                   selected={statusFilters.includes('REJECTED')}
                   onPress={() => toggleStatus('REJECTED')}>
-                  Rechazadas
+                  Rejected
                 </Chip>
               </View>
             </View>
 
             <View style={{ gap: 4 }}>
               <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                Sort
+                Sort by date
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
                 <Chip
@@ -537,11 +540,9 @@ export default function TeacherEventsScreen() {
                   }
                   selected={dateSortField === 'request'}
                   onPress={() => toggleDateSort('request')}>
-                  {dateSortField === 'request'
-                    ? dateSort === 'desc'
-                      ? 'Request newest'
-                      : 'Request oldest'
-                    : 'Request date'}
+                  {dateSortField === 'request' && dateSort === 'asc'
+                    ? 'Request date · oldest'
+                    : 'Request date · newest'}
                 </Chip>
                 <Chip
                   icon={
@@ -553,21 +554,15 @@ export default function TeacherEventsScreen() {
                   }
                   selected={dateSortField === 'review'}
                   onPress={() => toggleDateSort('review')}>
-                  {dateSortField === 'review'
-                    ? dateSort === 'desc'
-                      ? 'Review newest'
-                      : 'Review oldest'
-                    : 'Review date'}
+                  {dateSortField === 'review' && dateSort === 'asc'
+                    ? 'Review date · oldest'
+                    : 'Review date · newest'}
                 </Chip>
               </View>
             </View>
           </Card.Content>
         </Card>
-      </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16, gap: 8 }}>
         <List.Accordion
           title={`Pending (${pendingEvents.length})`}
           expanded={pendingOpen}

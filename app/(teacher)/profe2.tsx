@@ -178,7 +178,6 @@ export default function TeacherSkillsScreen() {
         <Card mode="outlined">
           <Card.Content style={{ gap: 4 }}>
             <Text variant="titleMedium">{guild ? guildLabel(guild) : 'Guild'}</Text>
-            <Text>Teacher EXP skills (auto-approved).</Text>
           </Card.Content>
         </Card>
         <Text variant="titleMedium">Skills</Text>
