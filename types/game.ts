@@ -118,9 +118,26 @@ export function skillListSection(skill: Skill): number {
 
 export function guildLabel(guild: Guild | undefined) {
   if (!guild) return 'Unknown guild';
+  const { name, detail } = guildLabelParts(guild);
+  return `${name} (${detail})`;
+}
+
+/** Compact classroom-style label, e.g. "1ºA FPSuperior DAM". */
+export function guildClassLabel(guild: Guild | undefined): string {
+  if (!guild) return 'Unknown guild';
+  const level = guild.level?.trim();
+  const modality = guild.modality?.trim();
+  return [`${guild.number}º${guild.letter}`, level, modality].filter(Boolean).join(' ');
+}
+
+export function guildLabelParts(guild: Guild | undefined): { name: string; detail: string } {
+  if (!guild) return { name: 'Unknown guild', detail: '-' };
   const level = guild.level ?? '-';
   const modality = guild.modality ?? '-';
-  return `${guild.name} (${guild.number}${guild.letter} · ${level} · ${modality})`;
+  return {
+    name: guild.name,
+    detail: `${guild.number}${guild.letter} · ${level} · ${modality}`,
+  };
 }
 
 export function characterOwnerLabel(
@@ -128,6 +145,15 @@ export function characterOwnerLabel(
   userById: Map<number, UserPublic>
 ) {
   if (!character) return '-';
+  const { name, owner } = characterOwnerParts(character, userById);
+  return `${name} (${owner})`;
+}
+
+export function characterOwnerParts(
+  character: Character | undefined,
+  userById: Map<number, UserPublic>
+): { name: string; owner: string } {
+  if (!character) return { name: '-', owner: 'Unknown' };
   const owner = userById.get(character.user_id);
-  return `${character.name} (${owner?.name ?? 'Unknown'})`;
+  return { name: character.name, owner: owner?.name ?? 'Unknown' };
 }

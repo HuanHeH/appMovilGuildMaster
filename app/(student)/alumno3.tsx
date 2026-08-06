@@ -9,13 +9,17 @@ import { selectSelectedCharacter, useCharacterStore } from '@/store/character-st
 import type { Character, EventStatus, GameEvent, Guild, Party, Skill, UserPublic } from '@/types/game';
 import {
   characterOwnerLabel,
-  guildLabel,
+  characterOwnerParts,
+  guildClassLabel,
+  isAutoEventSkill,
   isChangeJobSkill,
   isLevelUpSkill,
+  isTeacherExpSkill,
   levelUpTargetLevel,
 } from '@/types/game';
 
 type EventKindFilter = 'LAUNCHED' | 'AFFECTED';
+type StatusFilter = EventStatus | 'AUTO';
 type DateSort = 'desc' | 'asc';
 type DateSortField = 'request' | 'review';
 
@@ -83,8 +87,14 @@ function teacherExpSummary(
 }
 
 function isTeacherExpEvent(event: GameEvent, skill: Skill | undefined): boolean {
-  if (skill?.job === 'Teacher') return true;
+  if (skill && isTeacherExpSkill(skill)) return true;
   return event.caster_character_id == null && isExpDeltaComment(event.comment);
+}
+
+function isAutoEvent(event: GameEvent, skill: Skill | undefined): boolean {
+  if (isAutoEventSkill(skill)) return true;
+  // Teacher EXP fallback when skill catalog is incomplete
+  return isTeacherExpEvent(event, skill);
 }
 
 function parseChangeJobTarget(comment: string | null | undefined): string | null {
@@ -150,11 +160,12 @@ export default function EventsScreen() {
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [kindFilters, setKindFilters] = useState<EventKindFilter[]>([]);
-  const [statusFilters, setStatusFilters] = useState<EventStatus[]>([]);
+  const [statusFilters, setStatusFilters] = useState<StatusFilter[]>([]);
   const [dateSort, setDateSort] = useState<DateSort>('desc');
   const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
   const [allOpen, setAllOpen] = useState(true);
+  const [autoOpen, setAutoOpen] = useState(false);
   const [pendingOpen, setPendingOpen] = useState(false);
   const [approvedOpen, setApprovedOpen] = useState(false);
   const [rejectedOpen, setRejectedOpen] = useState(false);
@@ -272,26 +283,45 @@ export default function EventsScreen() {
 
   const statusFilteredEvents = useMemo(() => {
     if (!statusFilters.length) return filteredEvents;
-    return filteredEvents.filter((e) => statusFilters.includes(e.status));
-  }, [filteredEvents, statusFilters]);
+    return filteredEvents.filter((e) => {
+      const skill = skillById.get(e.skill_id);
+      const auto = isAutoEvent(e, skill);
+      if (auto) return statusFilters.includes('AUTO');
+      return statusFilters.includes(e.status);
+    });
+  }, [filteredEvents, skillById, statusFilters]);
 
+  const autoEvents = useMemo(
+    () =>
+      statusFilteredEvents.filter((e) => isAutoEvent(e, skillById.get(e.skill_id))),
+    [skillById, statusFilteredEvents]
+  );
   const pendingEvents = useMemo(
-    () => statusFilteredEvents.filter((e) => e.status === 'PENDING'),
-    [statusFilteredEvents]
+    () =>
+      statusFilteredEvents.filter(
+        (e) => e.status === 'PENDING' && !isAutoEvent(e, skillById.get(e.skill_id))
+      ),
+    [skillById, statusFilteredEvents]
   );
   const approvedEvents = useMemo(
-    () => statusFilteredEvents.filter((e) => e.status === 'APPROVED'),
-    [statusFilteredEvents]
+    () =>
+      statusFilteredEvents.filter(
+        (e) => e.status === 'APPROVED' && !isAutoEvent(e, skillById.get(e.skill_id))
+      ),
+    [skillById, statusFilteredEvents]
   );
   const rejectedEvents = useMemo(
-    () => statusFilteredEvents.filter((e) => e.status === 'REJECTED'),
-    [statusFilteredEvents]
+    () =>
+      statusFilteredEvents.filter(
+        (e) => e.status === 'REJECTED' && !isAutoEvent(e, skillById.get(e.skill_id))
+      ),
+    [skillById, statusFilteredEvents]
   );
 
   const toggleKind = (value: EventKindFilter) => {
     setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
   };
-  const toggleStatus = (value: EventStatus) => {
+  const toggleStatus = (value: StatusFilter) => {
     setStatusFilters((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
@@ -356,19 +386,30 @@ export default function EventsScreen() {
       isGuildTarget && event.guild_id === selectedCharacter.guild_id;
 
     let targetKind: 'character' | 'party' | 'guild' | null = null;
-    let targetLabel = '';
+    let targetShort = '';
+    let targetDisplay = '';
+    let targetOwner: string | null = null;
     let targetHighlight = false;
+    const eventGuild = guildById.get(event.guild_id);
+    const eventGuildClass = guildClassLabel(eventGuild);
     if (event.target_character_id !== null) {
       targetKind = 'character';
-      targetLabel = characterOwnerLabel(targetCharacter, userById);
+      const parts = characterOwnerParts(targetCharacter ?? undefined, userById);
+      targetShort = parts.name;
+      targetOwner = parts.owner;
+      targetDisplay = characterOwnerLabel(targetCharacter ?? undefined, userById);
       targetHighlight = receivedByCharacter;
     } else if (event.target_party_id !== null) {
       targetKind = 'party';
-      targetLabel = targetParty?.name ?? 'Unknown party';
+      const partyName = targetParty?.name ?? 'Unknown party';
+      targetShort = `${partyName} party`;
+      targetDisplay = partyName;
       targetHighlight = receivedByParty;
     } else if (isGuildTarget) {
       targetKind = 'guild';
-      targetLabel = guildLabel(guildById.get(event.guild_id));
+      const guildName = eventGuild?.name ?? 'guild';
+      targetShort = `${guildName} guild`;
+      targetDisplay = guildName;
       targetHighlight = guildWideForSelected;
     }
 
@@ -382,7 +423,7 @@ export default function EventsScreen() {
             (event.reviewed_by_user_id === session?.id ? session?.name : null) ??
             'Mentor')
         : null;
-    const expSummary = teacherExpSummary(event, skill, reviewer, targetLabel);
+    const expSummary = teacherExpSummary(event, skill, reviewer, targetShort);
     const isTeacherExp = Boolean(expSummary);
     const characterName =
       caster?.name ??
@@ -438,6 +479,10 @@ export default function EventsScreen() {
               ) : null}
             </View>
 
+            <Text variant="labelMedium" style={{ color: '#4b5563', fontWeight: '600' }}>
+              {eventGuildClass}
+            </Text>
+
             <Text style={{ fontWeight: '700' }} numberOfLines={2}>
               {skill?.name ??
                 (isTeacherExpEvent(event, skill)
@@ -469,7 +514,7 @@ export default function EventsScreen() {
                           ? { color: '#dc2626', fontWeight: '700' }
                           : undefined
                       }>
-                      {targetLabel}
+                      {targetDisplay}
                     </Text>
                   </Text>
                 ) : null}
@@ -477,12 +522,26 @@ export default function EventsScreen() {
             ) : null}
 
             {isTeacherExp && expSummary ? (
-              <Chip
-                icon="lightning-bolt"
-                style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                textStyle={{ flexShrink: 1 }}>
-                {expSummary}
-              </Chip>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                  marginTop: 2,
+                  alignItems: 'center',
+                }}>
+                <Chip
+                  icon="lightning-bolt"
+                  style={{ alignSelf: 'flex-start' }}
+                  textStyle={{ flexShrink: 1 }}>
+                  {expSummary}
+                </Chip>
+                {targetOwner ? (
+                  <Chip compact style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
+                    {targetOwner}
+                  </Chip>
+                ) : null}
+              </View>
             ) : isAutoProgression && progression ? (
               <Chip
                 icon="information-outline"
@@ -560,6 +619,11 @@ export default function EventsScreen() {
                   onPress={() => toggleStatus('REJECTED')}>
                   Rejected
                 </Chip>
+                <Chip
+                  selected={statusFilters.includes('AUTO')}
+                  onPress={() => toggleStatus('AUTO')}>
+                  Auto
+                </Chip>
               </View>
             </View>
 
@@ -609,6 +673,17 @@ export default function EventsScreen() {
           <View style={{ paddingTop: 8 }}>
             {filteredEvents.map(renderEventCard)}
             {!filteredEvents.length ? <Text style={{ marginBottom: 8 }}>No events.</Text> : null}
+          </View>
+        </List.Accordion>
+
+        <List.Accordion
+          title={`Auto (${autoEvents.length})`}
+          expanded={autoOpen}
+          onPress={() => setAutoOpen((v) => !v)}
+          style={{ backgroundColor: '#eff6ff', borderRadius: 10, borderWidth: 1, borderColor: '#bfdbfe' }}>
+          <View style={{ paddingTop: 8 }}>
+            {autoEvents.map(renderEventCard)}
+            {!autoEvents.length ? <Text style={{ marginBottom: 8 }}>No auto events.</Text> : null}
           </View>
         </List.Accordion>
 
