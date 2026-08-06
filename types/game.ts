@@ -1,7 +1,7 @@
 export type CharacterJob = 'Mage' | 'Rogue' | 'Paladin';
 export type SkillJob = CharacterJob | 'Common' | 'Teacher';
 export type SkillAoe = 'SINGLE' | 'PARTY' | 'GUILD';
-export type EventStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type EventStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'AUTO';
 
 export interface Guild {
   id: number;
