@@ -31,7 +31,8 @@ import { useGuildStore } from '@/store/guild-store';
 import type { Character, EventStatus, GameEvent, Guild, Party, Skill, UserPublic } from '@/types/game';
 import {
   characterOwnerLabel,
-  guildLabel,
+  characterOwnerParts,
+  guildClassLabel,
   isAutoEventSkill,
   isChangeJobSkill,
   isLevelUpSkill,
@@ -394,27 +395,37 @@ export default function TeacherEventsScreen() {
         : null;
 
     let targetKind: 'character' | 'party' | 'guild' | null = null;
-    let targetLabel = '';
+    let targetShort = '';
+    let targetDisplay = '';
+    let targetOwner: string | null = null;
+    const eventGuildClass = guildClassLabel(guild);
     if (event.target_character_id !== null) {
       targetKind = 'character';
-      targetLabel = characterOwnerLabel(targetCharacter, userById);
+      const parts = characterOwnerParts(targetCharacter ?? undefined, userById);
+      targetShort = parts.name;
+      targetOwner = parts.owner;
+      targetDisplay = characterOwnerLabel(targetCharacter ?? undefined, userById);
     } else if (event.target_party_id !== null) {
       targetKind = 'party';
-      targetLabel = targetParty?.name ?? 'Unknown party';
+      const partyName = targetParty?.name ?? 'Unknown party';
+      targetShort = `${partyName} party`;
+      targetDisplay = partyName;
     } else if (
       event.target_character_id === null &&
       event.target_party_id === null &&
       (skill?.aoe === 'GUILD' || skill?.job === 'Teacher')
     ) {
       targetKind = 'guild';
-      targetLabel = guild ? guildLabel(guild) : 'Guild';
+      const guildName = guild?.name ?? 'guild';
+      targetShort = `${guildName} guild`;
+      targetDisplay = guildName;
     }
 
     const targetPrefix =
       targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
     const expanded = expandedEventIds.includes(event.id);
     const colors = statusCardStyle(event.status, event.reviewed_at);
-    const expSummary = teacherExpSummary(event, skill, reviewer, targetLabel);
+    const expSummary = teacherExpSummary(event, skill, reviewer, targetShort);
     const isTeacherExp = Boolean(expSummary);
     const characterName =
       caster?.name ??
@@ -470,6 +481,10 @@ export default function TeacherEventsScreen() {
               {statusChipLabel ? <Chip compact>{statusChipLabel}</Chip> : null}
             </View>
 
+            <Text variant="labelMedium" style={{ color: '#4b5563', fontWeight: '600' }}>
+              {eventGuildClass}
+            </Text>
+
             <Text style={{ fontWeight: '700' }} numberOfLines={2}>
               {skill?.name ?? 'Unknown skill'}
             </Text>
@@ -484,16 +499,32 @@ export default function TeacherEventsScreen() {
                 </Text>
                 {targetKind ? (
                   <Text variant="bodySmall">
-                    · {targetPrefix}: <Text style={{ fontWeight: '600' }}>{targetLabel}</Text>
+                    · {targetPrefix}: <Text style={{ fontWeight: '600' }}>{targetDisplay}</Text>
                   </Text>
                 ) : null}
               </View>
             ) : null}
 
             {isTeacherExp && expSummary ? (
-              <Chip icon="lightning-bolt" style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
-                {expSummary}
-              </Chip>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                  alignItems: 'center',
+                }}>
+                <Chip
+                  icon="lightning-bolt"
+                  style={{ alignSelf: 'flex-start' }}
+                  textStyle={{ flexShrink: 1 }}>
+                  {expSummary}
+                </Chip>
+                {targetOwner ? (
+                  <Chip compact style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
+                    {targetOwner}
+                  </Chip>
+                ) : null}
+              </View>
             ) : isAutoProgression && progression ? (
               <Chip icon="information-outline" style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
                 {progression}
