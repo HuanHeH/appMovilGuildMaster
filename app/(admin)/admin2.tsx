@@ -6,7 +6,7 @@ export default function Admin2Screen() {
   return (
     <View className="flex-1 items-center justify-center bg-white px-6">
       <Stack.Screen options={{ title: 'Admin2' }} />
-      <Text variant="headlineSmall">Admin2 (plantilla)</Text>
+      <Text variant="headlineSmall">Admin2 (template)</Text>
     </View>
   );
 }
