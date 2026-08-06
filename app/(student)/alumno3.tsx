@@ -19,7 +19,6 @@ import {
 } from '@/types/game';
 
 type EventKindFilter = 'LAUNCHED' | 'AFFECTED';
-type StatusFilter = EventStatus | 'AUTO';
 type DateSort = 'desc' | 'asc';
 type DateSortField = 'request' | 'review';
 
@@ -139,11 +138,14 @@ function statusCardStyle(status: EventStatus, reviewedAt: string | null) {
   if (status === 'REJECTED') {
     return { backgroundColor: '#fef2f2', borderColor: '#fecaca' };
   }
-  // APPROVED without review date = auto (Level Up / Change Job / Teacher EXP)
-  if (!reviewedAt) {
+  if (status === 'AUTO') {
     return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
   }
-  return { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' };
+  // APPROVED with review date
+  if (reviewedAt) {
+    return { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' };
+  }
+  return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
 }
 
 export default function EventsScreen() {
@@ -160,7 +162,7 @@ export default function EventsScreen() {
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [kindFilters, setKindFilters] = useState<EventKindFilter[]>([]);
-  const [statusFilters, setStatusFilters] = useState<StatusFilter[]>([]);
+  const [statusFilters, setStatusFilters] = useState<EventStatus[]>([]);
   const [dateSort, setDateSort] = useState<DateSort>('desc');
   const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
@@ -283,45 +285,30 @@ export default function EventsScreen() {
 
   const statusFilteredEvents = useMemo(() => {
     if (!statusFilters.length) return filteredEvents;
-    return filteredEvents.filter((e) => {
-      const skill = skillById.get(e.skill_id);
-      const auto = isAutoEvent(e, skill);
-      if (auto) return statusFilters.includes('AUTO');
-      return statusFilters.includes(e.status);
-    });
-  }, [filteredEvents, skillById, statusFilters]);
+    return filteredEvents.filter((e) => statusFilters.includes(e.status));
+  }, [filteredEvents, statusFilters]);
 
   const autoEvents = useMemo(
-    () =>
-      statusFilteredEvents.filter((e) => isAutoEvent(e, skillById.get(e.skill_id))),
-    [skillById, statusFilteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'AUTO'),
+    [statusFilteredEvents]
   );
   const pendingEvents = useMemo(
-    () =>
-      statusFilteredEvents.filter(
-        (e) => e.status === 'PENDING' && !isAutoEvent(e, skillById.get(e.skill_id))
-      ),
-    [skillById, statusFilteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'PENDING'),
+    [statusFilteredEvents]
   );
   const approvedEvents = useMemo(
-    () =>
-      statusFilteredEvents.filter(
-        (e) => e.status === 'APPROVED' && !isAutoEvent(e, skillById.get(e.skill_id))
-      ),
-    [skillById, statusFilteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'APPROVED'),
+    [statusFilteredEvents]
   );
   const rejectedEvents = useMemo(
-    () =>
-      statusFilteredEvents.filter(
-        (e) => e.status === 'REJECTED' && !isAutoEvent(e, skillById.get(e.skill_id))
-      ),
-    [skillById, statusFilteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'REJECTED'),
+    [statusFilteredEvents]
   );
 
   const toggleKind = (value: EventKindFilter) => {
     setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
   };
-  const toggleStatus = (value: StatusFilter) => {
+  const toggleStatus = (value: EventStatus) => {
     setStatusFilters((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
     );
