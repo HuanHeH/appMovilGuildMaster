@@ -28,6 +28,7 @@ import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '
 import {
   isChangeJobSkill,
   isCommonSkill,
+  isDebuffSkill,
   isProgressionSkill,
   shouldShowSkillForCharacter,
   skillListSection,
@@ -199,7 +200,12 @@ export default function SkillsScreen() {
       return;
     }
 
-    Alert.alert('Confirm skill use', `Use ${skill.name} for ${skill.exp_cost} EXP?`, [
+    Alert.alert(
+      'Confirm skill use',
+      isDebuffSkill(skill)
+        ? `Use ${skill.name} for ${skill.exp_cost} EXP? Targets each gain ${Math.floor(skill.exp_cost / 2)} EXP (debuff).`
+        : `Use ${skill.name} for ${skill.exp_cost} EXP?`,
+      [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Use skill',
