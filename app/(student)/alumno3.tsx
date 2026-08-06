@@ -1,7 +1,7 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { ActivityIndicator, Card, Chip, Text, TouchableRipple } from 'react-native-paper';
+import { ActivityIndicator, Card, Chip, List, Text, TouchableRipple } from 'react-native-paper';
 
 import { getCharacters, getEvents, getGuilds, getParties, getSkills, getUsers } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
@@ -71,12 +71,20 @@ function teacherExpSummary(
   teacherName: string | null,
   targetLabel: string
 ): string | null {
-  if (skill?.job !== 'Teacher') return null;
+  const looksTeacher =
+    skill?.job === 'Teacher' ||
+    (event.caster_character_id == null && isExpDeltaComment(event.comment));
+  if (!looksTeacher) return null;
   const delta = parseExpDeltaComment(event.comment);
   if (!delta) return null;
   const who = teacherName?.trim() || 'Teacher';
   const target = targetLabel.trim() || teacherExpScope(event);
   return `${who} ${delta} EXP to ${target}`;
+}
+
+function isTeacherExpEvent(event: GameEvent, skill: Skill | undefined): boolean {
+  if (skill?.job === 'Teacher') return true;
+  return event.caster_character_id == null && isExpDeltaComment(event.comment);
 }
 
 function parseChangeJobTarget(comment: string | null | undefined): string | null {
@@ -146,6 +154,10 @@ export default function EventsScreen() {
   const [dateSort, setDateSort] = useState<DateSort>('desc');
   const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
+  const [allOpen, setAllOpen] = useState(true);
+  const [pendingOpen, setPendingOpen] = useState(false);
+  const [approvedOpen, setApprovedOpen] = useState(false);
+  const [rejectedOpen, setRejectedOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -213,11 +225,12 @@ export default function EventsScreen() {
       const affectedByParty =
         selectedCharacter.party_id !== null && event.target_party_id === selectedCharacter.party_id;
       const skill = skillById.get(event.skill_id);
+      const teacherExp = isTeacherExpEvent(event, skill);
       const affectedByGuild =
         event.guild_id === selectedCharacter.guild_id &&
         event.target_character_id === null &&
         event.target_party_id === null &&
-        (skill?.aoe === 'GUILD' || skill?.job === 'Teacher');
+        (skill?.aoe === 'GUILD' || teacherExp);
       return launched || affectedByCharacter || affectedByParty || affectedByGuild;
     });
   }, [events, selectedCharacter, skillById]);
@@ -229,19 +242,19 @@ export default function EventsScreen() {
       const affectedByParty =
         selectedCharacter?.party_id != null && event.target_party_id === selectedCharacter.party_id;
       const skill = skillById.get(event.skill_id);
+      const teacherExp = isTeacherExpEvent(event, skill);
       const affectedByGuild =
         selectedCharacter != null &&
         event.guild_id === selectedCharacter.guild_id &&
         event.target_character_id === null &&
         event.target_party_id === null &&
-        (skill?.aoe === 'GUILD' || skill?.job === 'Teacher');
+        (skill?.aoe === 'GUILD' || teacherExp);
       const affected = affectedByCharacter || affectedByParty || affectedByGuild;
       const kindAllowed =
         kindFilters.length === 0 ||
         (launched && kindFilters.includes('LAUNCHED')) ||
         (affected && kindFilters.includes('AFFECTED'));
-      const statusAllowed = statusFilters.length === 0 || statusFilters.includes(event.status);
-      return kindAllowed && statusAllowed;
+      return kindAllowed;
     });
 
     return filtered.sort((a, b) => {
@@ -255,7 +268,25 @@ export default function EventsScreen() {
       const diff = eventTime(a.created_at) - eventTime(b.created_at);
       return dateSort === 'asc' ? diff : -diff;
     });
-  }, [dateSort, dateSortField, kindFilters, relatedEvents, selectedCharacter, skillById, statusFilters]);
+  }, [dateSort, dateSortField, kindFilters, relatedEvents, selectedCharacter, skillById]);
+
+  const statusFilteredEvents = useMemo(() => {
+    if (!statusFilters.length) return filteredEvents;
+    return filteredEvents.filter((e) => statusFilters.includes(e.status));
+  }, [filteredEvents, statusFilters]);
+
+  const pendingEvents = useMemo(
+    () => statusFilteredEvents.filter((e) => e.status === 'PENDING'),
+    [statusFilteredEvents]
+  );
+  const approvedEvents = useMemo(
+    () => statusFilteredEvents.filter((e) => e.status === 'APPROVED'),
+    [statusFilteredEvents]
+  );
+  const rejectedEvents = useMemo(
+    () => statusFilteredEvents.filter((e) => e.status === 'REJECTED'),
+    [statusFilteredEvents]
+  );
 
   const toggleKind = (value: EventKindFilter) => {
     setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
@@ -297,6 +328,190 @@ export default function EventsScreen() {
     );
   }
 
+  const renderEventCard = (event: GameEvent) => {
+    const caster =
+      event.caster_character_id != null
+        ? characterById.get(event.caster_character_id)
+        : undefined;
+    const targetCharacter =
+      event.target_character_id !== null
+        ? characterById.get(event.target_character_id)
+        : null;
+    const targetParty =
+      event.target_party_id !== null ? partyById.get(event.target_party_id) : null;
+    const skill = skillById.get(event.skill_id);
+    const launchedBySelected =
+      event.caster_character_id != null &&
+      event.caster_character_id === selectedCharacter.id;
+    const receivedByCharacter = event.target_character_id === selectedCharacter.id;
+    const receivedByParty =
+      selectedCharacter.party_id !== null &&
+      event.target_party_id === selectedCharacter.party_id;
+    const teacherExp = isTeacherExpEvent(event, skill);
+    const isGuildTarget =
+      event.target_character_id === null &&
+      event.target_party_id === null &&
+      (skill?.aoe === 'GUILD' || teacherExp);
+    const guildWideForSelected =
+      isGuildTarget && event.guild_id === selectedCharacter.guild_id;
+
+    let targetKind: 'character' | 'party' | 'guild' | null = null;
+    let targetLabel = '';
+    let targetHighlight = false;
+    if (event.target_character_id !== null) {
+      targetKind = 'character';
+      targetLabel = characterOwnerLabel(targetCharacter, userById);
+      targetHighlight = receivedByCharacter;
+    } else if (event.target_party_id !== null) {
+      targetKind = 'party';
+      targetLabel = targetParty?.name ?? 'Unknown party';
+      targetHighlight = receivedByParty;
+    } else if (isGuildTarget) {
+      targetKind = 'guild';
+      targetLabel = guildLabel(guildById.get(event.guild_id));
+      targetHighlight = guildWideForSelected;
+    }
+
+    const targetPrefix =
+      targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
+    const expanded = expandedEventIds.includes(event.id);
+    const colors = statusCardStyle(event.status, event.reviewed_at);
+    const reviewer =
+      event.reviewed_by_user_id != null
+        ? (userById.get(event.reviewed_by_user_id)?.name ??
+            (event.reviewed_by_user_id === session?.id ? session?.name : null) ??
+            'Mentor')
+        : null;
+    const expSummary = teacherExpSummary(event, skill, reviewer, targetLabel);
+    const isTeacherExp = Boolean(expSummary);
+    const characterName =
+      caster?.name ??
+      (event.target_character_id != null
+        ? characterById.get(event.target_character_id)?.name
+        : null) ??
+      null;
+    const progression = progressionSummary(event, skill, characterName);
+    const isAutoProgression = Boolean(progression);
+    const hideFromRow = isTeacherExp || isAutoProgression;
+
+    let statusChipLabel = '';
+    if (event.status === 'PENDING') {
+      statusChipLabel = 'PENDING';
+    } else if (event.status === 'REJECTED') {
+      const parts = [event.status];
+      if (event.reviewed_at) parts.push(formatEventDate(event.reviewed_at));
+      if (reviewer) parts.push(reviewer);
+      statusChipLabel = parts.join(' · ');
+    } else if (event.status === 'APPROVED' && event.reviewed_at) {
+      const parts = [event.status, formatEventDate(event.reviewed_at)];
+      if (reviewer) parts.push(reviewer);
+      statusChipLabel = parts.join(' · ');
+    }
+
+    return (
+      <Card
+        key={event.id}
+        mode="outlined"
+        style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor }}>
+        <TouchableRipple onPress={() => toggleEventExpanded(event.id)} borderless={false}>
+          <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 8,
+                flexWrap: 'wrap',
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+                <Text variant="titleSmall" style={{ fontWeight: '700' }}>
+                  #{event.id}
+                </Text>
+                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                  {formatEventDate(event.created_at)}
+                </Text>
+              </View>
+              {statusChipLabel ? (
+                <Chip compact style={{ maxWidth: '100%' }} textStyle={{ flexShrink: 1 }}>
+                  {statusChipLabel}
+                </Chip>
+              ) : null}
+            </View>
+
+            <Text style={{ fontWeight: '700' }} numberOfLines={2}>
+              {skill?.name ??
+                (isTeacherExpEvent(event, skill)
+                  ? parseExpDeltaComment(event.comment)?.startsWith('-')
+                    ? 'Remove EXP'
+                    : 'Grant EXP'
+                  : 'Unknown skill')}
+            </Text>
+
+            {!hideFromRow ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                <Text variant="bodySmall" style={{ flexShrink: 1 }}>
+                  From:{' '}
+                  <Text
+                    style={
+                      launchedBySelected
+                        ? { color: '#dc2626', fontWeight: '700' }
+                        : undefined
+                    }>
+                    {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
+                  </Text>
+                </Text>
+                {targetKind ? (
+                  <Text variant="bodySmall" style={{ flexShrink: 1 }}>
+                    · {targetPrefix}:{' '}
+                    <Text
+                      style={
+                        targetHighlight
+                          ? { color: '#dc2626', fontWeight: '700' }
+                          : undefined
+                      }>
+                      {targetLabel}
+                    </Text>
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {isTeacherExp && expSummary ? (
+              <Chip
+                icon="lightning-bolt"
+                style={{ alignSelf: 'flex-start', marginTop: 2 }}
+                textStyle={{ flexShrink: 1 }}>
+                {expSummary}
+              </Chip>
+            ) : isAutoProgression && progression ? (
+              <Chip
+                icon="information-outline"
+                style={{ alignSelf: 'flex-start', marginTop: 2 }}
+                textStyle={{ flexShrink: 1 }}>
+                {progression}
+              </Chip>
+            ) : event.comment &&
+              !isExpDeltaComment(event.comment) &&
+              !isAutoProgression ? (
+              expanded ? (
+                <Chip
+                  icon="comment-text-outline"
+                  style={{ alignSelf: 'flex-start', marginTop: 2 }}
+                  textStyle={{ flexShrink: 1 }}>
+                  {event.comment}
+                </Chip>
+              ) : (
+                <Text variant="labelSmall" style={{ color: '#9ca3af', marginTop: 2 }}>
+                  Comment · tap to show
+                </Text>
+              )
+            ) : null}
+          </Card.Content>
+        </TouchableRipple>
+      </Card>
+    );
+  };
+
   return (
     <View className="flex-1 bg-white">
       <ScrollView
@@ -305,12 +520,7 @@ export default function EventsScreen() {
         keyboardShouldPersistTaps="handled">
         <Card mode="outlined">
           <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text variant="titleSmall">Events · {selectedCharacter.name}</Text>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                Lv.{selectedCharacter.level} · {selectedCharacter.exp} EXP
-              </Text>
-            </View>
+            <Text variant="titleSmall">Events</Text>
 
             <View style={{ gap: 4 }}>
               <Text variant="labelSmall" style={{ color: '#6b7280' }}>
@@ -391,188 +601,53 @@ export default function EventsScreen() {
           </Card.Content>
         </Card>
 
-        {filteredEvents.map((event) => {
-          const caster =
-            event.caster_character_id != null
-              ? characterById.get(event.caster_character_id)
-              : undefined;
-          const targetCharacter =
-            event.target_character_id !== null
-              ? characterById.get(event.target_character_id)
-              : null;
-          const targetParty =
-            event.target_party_id !== null ? partyById.get(event.target_party_id) : null;
-          const skill = skillById.get(event.skill_id);
-          const launchedBySelected =
-            event.caster_character_id != null &&
-            event.caster_character_id === selectedCharacter.id;
-          const receivedByCharacter = event.target_character_id === selectedCharacter.id;
-          const receivedByParty =
-            selectedCharacter.party_id !== null &&
-            event.target_party_id === selectedCharacter.party_id;
-          const isGuildTarget =
-            event.target_character_id === null &&
-            event.target_party_id === null &&
-            (skill?.aoe === 'GUILD' || skill?.job === 'Teacher');
-          const guildWideForSelected =
-            isGuildTarget && event.guild_id === selectedCharacter.guild_id;
+        <List.Accordion
+          title={`All (${filteredEvents.length})`}
+          expanded={allOpen}
+          onPress={() => setAllOpen((v) => !v)}
+          style={{ backgroundColor: '#f9fafb', borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb' }}>
+          <View style={{ paddingTop: 8 }}>
+            {filteredEvents.map(renderEventCard)}
+            {!filteredEvents.length ? <Text style={{ marginBottom: 8 }}>No events.</Text> : null}
+          </View>
+        </List.Accordion>
 
-          let targetKind: 'character' | 'party' | 'guild' | null = null;
-          let targetLabel = '';
-          let targetHighlight = false;
-          if (event.target_character_id !== null) {
-            targetKind = 'character';
-            targetLabel = characterOwnerLabel(targetCharacter, userById);
-            targetHighlight = receivedByCharacter;
-          } else if (event.target_party_id !== null) {
-            targetKind = 'party';
-            targetLabel = targetParty?.name ?? 'Unknown party';
-            targetHighlight = receivedByParty;
-          } else if (isGuildTarget) {
-            targetKind = 'guild';
-            targetLabel = guildLabel(guildById.get(event.guild_id));
-            targetHighlight = guildWideForSelected;
-          }
+        <List.Accordion
+          title={`Pending (${pendingEvents.length})`}
+          expanded={pendingOpen}
+          onPress={() => setPendingOpen((v) => !v)}
+          style={{ backgroundColor: '#fefce8', borderRadius: 10, borderWidth: 1, borderColor: '#fde68a' }}>
+          <View style={{ paddingTop: 8 }}>
+            {pendingEvents.map(renderEventCard)}
+            {!pendingEvents.length ? <Text style={{ marginBottom: 8 }}>No pending events.</Text> : null}
+          </View>
+        </List.Accordion>
 
-          const targetPrefix =
-            targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
-          const expanded = expandedEventIds.includes(event.id);
-          const colors = statusCardStyle(event.status, event.reviewed_at);
-          const reviewer =
-            event.reviewed_by_user_id != null
-              ? (userById.get(event.reviewed_by_user_id)?.name ??
-                  (event.reviewed_by_user_id === session?.id ? session?.name : null) ??
-                  'Mentor')
-              : null;
-          const expSummary = teacherExpSummary(event, skill, reviewer, targetLabel);
-          const isTeacherExp = Boolean(expSummary);
-          const characterName =
-            caster?.name ??
-            (event.target_character_id != null
-              ? characterById.get(event.target_character_id)?.name
-              : null) ??
-            null;
-          const progression = progressionSummary(event, skill, characterName);
-          const isAutoProgression = Boolean(progression);
-          const hideFromRow = isTeacherExp || isAutoProgression;
+        <List.Accordion
+          title={`Approved (${approvedEvents.length})`}
+          expanded={approvedOpen}
+          onPress={() => setApprovedOpen((v) => !v)}
+          style={{ backgroundColor: '#f0fdf4', borderRadius: 10, borderWidth: 1, borderColor: '#bbf7d0' }}>
+          <View style={{ paddingTop: 8 }}>
+            {approvedEvents.map(renderEventCard)}
+            {!approvedEvents.length ? (
+              <Text style={{ marginBottom: 8 }}>No approved events.</Text>
+            ) : null}
+          </View>
+        </List.Accordion>
 
-          let statusChipLabel = '';
-          if (event.status === 'PENDING') {
-            statusChipLabel = 'PENDING';
-          } else if (event.status === 'REJECTED') {
-            const parts = [event.status];
-            if (event.reviewed_at) parts.push(formatEventDate(event.reviewed_at));
-            if (reviewer) parts.push(reviewer);
-            statusChipLabel = parts.join(' · ');
-          } else if (event.status === 'APPROVED' && event.reviewed_at) {
-            const parts = [event.status, formatEventDate(event.reviewed_at)];
-            if (reviewer) parts.push(reviewer);
-            statusChipLabel = parts.join(' · ');
-          }
-
-          return (
-            <Card
-              key={event.id}
-              mode="outlined"
-              style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor }}>
-              <TouchableRipple onPress={() => toggleEventExpanded(event.id)} borderless={false}>
-                <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12 }}>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 8,
-                      flexWrap: 'wrap',
-                    }}>
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
-                      <Text variant="titleSmall" style={{ fontWeight: '700' }}>
-                        #{event.id}
-                      </Text>
-                      <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                        {formatEventDate(event.created_at)}
-                      </Text>
-                    </View>
-                    {statusChipLabel ? (
-                      <Chip compact style={{ maxWidth: '100%' }} textStyle={{ flexShrink: 1 }}>
-                        {statusChipLabel}
-                      </Chip>
-                    ) : null}
-                  </View>
-
-                  <Text style={{ fontWeight: '700' }} numberOfLines={2}>
-                    {skill?.name ?? 'Unknown skill'}
-                  </Text>
-
-                  {!hideFromRow ? (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
-                      <Text variant="bodySmall" style={{ flexShrink: 1 }}>
-                        From:{' '}
-                        <Text
-                          style={
-                            launchedBySelected
-                              ? { color: '#dc2626', fontWeight: '700' }
-                              : undefined
-                          }>
-                          {caster
-                            ? characterOwnerLabel(caster, userById)
-                            : (reviewer ?? 'Teacher')}
-                        </Text>
-                      </Text>
-                      {targetKind ? (
-                        <Text variant="bodySmall" style={{ flexShrink: 1 }}>
-                          · {targetPrefix}:{' '}
-                          <Text
-                            style={
-                              targetHighlight
-                                ? { color: '#dc2626', fontWeight: '700' }
-                                : undefined
-                            }>
-                            {targetLabel}
-                          </Text>
-                        </Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-
-                  {isTeacherExp && expSummary ? (
-                    <Chip
-                      icon="lightning-bolt"
-                      style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                      textStyle={{ flexShrink: 1 }}>
-                      {expSummary}
-                    </Chip>
-                  ) : isAutoProgression && progression ? (
-                    <Chip
-                      icon="information-outline"
-                      style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                      textStyle={{ flexShrink: 1 }}>
-                      {progression}
-                    </Chip>
-                  ) : event.comment &&
-                    !isExpDeltaComment(event.comment) &&
-                    !isAutoProgression ? (
-                    expanded ? (
-                      <Chip
-                        icon="comment-text-outline"
-                        style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                        textStyle={{ flexShrink: 1 }}>
-                        {event.comment}
-                      </Chip>
-                    ) : (
-                      <Text variant="labelSmall" style={{ color: '#9ca3af', marginTop: 2 }}>
-                        Comment · tap to show
-                      </Text>
-                    )
-                  ) : null}
-                </Card.Content>
-              </TouchableRipple>
-            </Card>
-          );
-        })}
-
-        {!filteredEvents.length ? <Text>No events match current filters.</Text> : null}
+        <List.Accordion
+          title={`Rejected (${rejectedEvents.length})`}
+          expanded={rejectedOpen}
+          onPress={() => setRejectedOpen((v) => !v)}
+          style={{ backgroundColor: '#fef2f2', borderRadius: 10, borderWidth: 1, borderColor: '#fecaca' }}>
+          <View style={{ paddingTop: 8 }}>
+            {rejectedEvents.map(renderEventCard)}
+            {!rejectedEvents.length ? (
+              <Text style={{ marginBottom: 8 }}>No rejected events.</Text>
+            ) : null}
+          </View>
+        </List.Accordion>
       </ScrollView>
     </View>
   );

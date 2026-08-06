@@ -65,7 +65,6 @@ export default function ProfileScreen() {
             <Text variant="titleMedium">User</Text>
             <Text>{session?.name}</Text>
             <Text>{session?.mail}</Text>
-            <Text>Role: {session?.role}</Text>
           </Card.Content>
         </Card>
 

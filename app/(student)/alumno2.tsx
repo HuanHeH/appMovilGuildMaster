@@ -4,7 +4,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
-  Card,
+  Chip,
   Divider,
   List,
   Menu,
@@ -295,15 +295,7 @@ export default function SkillsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, gap: 12 }}>
-        <Card mode="outlined">
-          <Card.Content style={{ gap: 4 }}>
-            <Text variant="titleMedium">{selectedCharacter.name}</Text>
-            <Text>
-              {selectedCharacter.job} | Lv.{selectedCharacter.level} | EXP {selectedCharacter.exp}
-            </Text>
-          </Card.Content>
-        </Card>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
 
@@ -359,18 +351,23 @@ export default function SkillsScreen() {
                               : undefined
                         }>
                         {skill.name}
-                        {common ? ' [Common]' : ''}
                       </Text>
-                      <Text
-                        style={
-                          common
-                            ? { color: '#1e40af' }
-                            : locked
-                              ? { color: '#6b7280' }
-                              : undefined
-                        }>
-                        Lv req: {skill.level_req} | Cost: {skill.exp_cost} EXP | {skill.aoe}
-                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        <Chip
+                          compact
+                          icon="lightning-bolt"
+                          style={locked ? { opacity: 0.75 } : undefined}
+                          textStyle={locked ? { color: '#6b7280' } : undefined}>
+                          {skill.exp_cost} EXP
+                        </Chip>
+                        <Chip
+                          compact
+                          icon="target"
+                          style={locked ? { opacity: 0.75 } : undefined}
+                          textStyle={locked ? { color: '#6b7280' } : undefined}>
+                          {skill.aoe}
+                        </Chip>
+                      </View>
                       <Text
                         style={
                           common
