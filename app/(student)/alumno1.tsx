@@ -91,7 +91,7 @@ export default function ProfileScreen() {
                       backgroundColor: selected ? '#fef2f2' : 'white',
                     }}>
                     <List.Item
-                      title={`${character.id}. ${character.name}`}
+                      title={character.name}
                       description={`${character.job} | Lv.${character.level} | EXP ${character.exp}\n${guildLabel(guild)}`}
                       left={(props) => (
                         <List.Icon {...props} icon={selected ? 'check-circle' : 'account'} />

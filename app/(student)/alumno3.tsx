@@ -1,7 +1,7 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { ActivityIndicator, Card, Checkbox, Chip, Text } from 'react-native-paper';
+import { ActivityIndicator, Card, Chip, Text, TouchableRipple } from 'react-native-paper';
 
 import { getCharacters, getEvents, getParties, getSkills, getUsers } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
@@ -10,6 +10,46 @@ import type { Character, EventStatus, GameEvent, Party, Skill, UserPublic } from
 import { characterOwnerLabel } from '@/types/game';
 
 type EventKindFilter = 'LAUNCHED' | 'AFFECTED';
+type DateSort = 'desc' | 'asc';
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
+function formatEventDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = MONTHS[date.getMonth()];
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day} ${month} ${year}`;
+}
+
+function eventTime(iso: string): number {
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function statusCardStyle(status: EventStatus) {
+  if (status === 'PENDING') {
+    return { backgroundColor: '#fefce8', borderColor: '#fde68a' };
+  }
+  if (status === 'REJECTED') {
+    return { backgroundColor: '#fef2f2', borderColor: '#fecaca' };
+  }
+  return { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' };
+}
 
 export default function EventsScreen() {
   const session = useAuthStore((state) => state.session);
@@ -25,6 +65,8 @@ export default function EventsScreen() {
   const [loading, setLoading] = useState(true);
   const [kindFilters, setKindFilters] = useState<EventKindFilter[]>([]);
   const [statusFilters, setStatusFilters] = useState<EventStatus[]>([]);
+  const [dateSort, setDateSort] = useState<DateSort>('desc');
+  const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,7 +138,7 @@ export default function EventsScreen() {
   }, [events, selectedCharacter, skillById]);
 
   const filteredEvents = useMemo(() => {
-    return relatedEvents.filter((event) => {
+    const filtered = relatedEvents.filter((event) => {
       const launched = event.caster_character_id === selectedCharacter?.id;
       const affectedByCharacter = event.target_character_id === selectedCharacter?.id;
       const affectedByParty =
@@ -116,7 +158,12 @@ export default function EventsScreen() {
       const statusAllowed = statusFilters.length === 0 || statusFilters.includes(event.status);
       return kindAllowed && statusAllowed;
     });
-  }, [kindFilters, relatedEvents, selectedCharacter, skillById, statusFilters]);
+
+    return filtered.sort((a, b) => {
+      const diff = eventTime(a.created_at) - eventTime(b.created_at);
+      return dateSort === 'asc' ? diff : -diff;
+    });
+  }, [dateSort, kindFilters, relatedEvents, selectedCharacter, skillById, statusFilters]);
 
   const toggleKind = (value: EventKindFilter) => {
     setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
@@ -124,6 +171,14 @@ export default function EventsScreen() {
   const toggleStatus = (value: EventStatus) => {
     setStatusFilters((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+  const toggleDateSort = () => {
+    setDateSort((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+  };
+  const toggleEventExpanded = (eventId: number) => {
+    setExpandedEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
     );
   };
 
@@ -147,45 +202,69 @@ export default function EventsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
         <Card mode="outlined">
-          <Card.Content style={{ gap: 8 }}>
-            <Text variant="titleMedium">Events for {selectedCharacter.name}</Text>
-            <Text>
-              {selectedCharacter.job} | Lv.{selectedCharacter.level} | EXP {selectedCharacter.exp}
-            </Text>
-
-            <Text variant="titleSmall">Kind (one at a time)</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              <Checkbox.Item
-                label="Lanzadas"
-                status={kindFilters.includes('LAUNCHED') ? 'checked' : 'unchecked'}
-                onPress={() => toggleKind('LAUNCHED')}
-              />
-              <Checkbox.Item
-                label="Sufridas"
-                status={kindFilters.includes('AFFECTED') ? 'checked' : 'unchecked'}
-                onPress={() => toggleKind('AFFECTED')}
-              />
+          <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text variant="titleSmall">Events · {selectedCharacter.name}</Text>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Lv.{selectedCharacter.level} · {selectedCharacter.exp} EXP
+              </Text>
             </View>
 
-            <Text variant="titleSmall">Status</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              <Checkbox.Item
-                label="Pendientes"
-                status={statusFilters.includes('PENDING') ? 'checked' : 'unchecked'}
-                onPress={() => toggleStatus('PENDING')}
-              />
-              <Checkbox.Item
-                label="Aprobadas"
-                status={statusFilters.includes('APPROVED') ? 'checked' : 'unchecked'}
-                onPress={() => toggleStatus('APPROVED')}
-              />
-              <Checkbox.Item
-                label="Rechazadas"
-                status={statusFilters.includes('REJECTED') ? 'checked' : 'unchecked'}
-                onPress={() => toggleStatus('REJECTED')}
-              />
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Kind (one)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  selected={kindFilters.includes('LAUNCHED')}
+                  onPress={() => toggleKind('LAUNCHED')}>
+                  Lanzadas
+                </Chip>
+                <Chip
+                  selected={kindFilters.includes('AFFECTED')}
+                  onPress={() => toggleKind('AFFECTED')}>
+                  Sufridas
+                </Chip>
+              </View>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Status (multi)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  selected={statusFilters.includes('PENDING')}
+                  onPress={() => toggleStatus('PENDING')}>
+                  Pendientes
+                </Chip>
+                <Chip
+                  selected={statusFilters.includes('APPROVED')}
+                  onPress={() => toggleStatus('APPROVED')}>
+                  Aprobadas
+                </Chip>
+                <Chip
+                  selected={statusFilters.includes('REJECTED')}
+                  onPress={() => toggleStatus('REJECTED')}>
+                  Rechazadas
+                </Chip>
+              </View>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Sort
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  icon={dateSort === 'desc' ? 'sort-calendar-descending' : 'sort-calendar-ascending'}
+                  selected
+                  onPress={toggleDateSort}>
+                  {dateSort === 'desc' ? 'Date newest' : 'Date oldest'}
+                </Chip>
+              </View>
             </View>
           </Card.Content>
         </Card>
@@ -193,7 +272,7 @@ export default function EventsScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 12 }}>
+        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16, gap: 8 }}>
         {filteredEvents.map((event) => {
           const caster = characterById.get(event.caster_character_id);
           const targetCharacter =
@@ -220,11 +299,11 @@ export default function EventsScreen() {
           let targetHighlight = false;
           if (event.target_character_id !== null) {
             targetKind = 'character';
-            targetLabel = targetCharacter?.name ?? `Character ${event.target_character_id}`;
+            targetLabel = characterOwnerLabel(targetCharacter, userById);
             targetHighlight = receivedByCharacter;
           } else if (event.target_party_id !== null) {
             targetKind = 'party';
-            targetLabel = targetParty?.name ?? `Party ${event.target_party_id}`;
+            targetLabel = targetParty?.name ?? 'Unknown party';
             targetHighlight = receivedByParty;
           } else if (isGuildTarget) {
             targetKind = 'guild';
@@ -232,45 +311,94 @@ export default function EventsScreen() {
             targetHighlight = guildWideForSelected;
           }
 
+          const targetPrefix =
+            targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
+          const expanded = expandedEventIds.includes(event.id);
+          const colors = statusCardStyle(event.status);
+          const reviewer =
+            event.reviewed_by_user_id != null
+              ? (userById.get(event.reviewed_by_user_id)?.name ?? 'Unknown')
+              : null;
+
+          let statusChipLabel = event.status;
+          if (event.status === 'APPROVED' || event.status === 'REJECTED') {
+            const parts = [event.status, formatEventDate(event.created_at)];
+            if (reviewer) parts.push(reviewer);
+            statusChipLabel = parts.join(' · ');
+          }
+
           return (
-            <Card key={event.id} mode="contained">
-              <Card.Content style={{ gap: 4 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="titleSmall">#{event.id}</Text>
-                  <Chip compact>{event.status}</Chip>
-                </View>
-                <Text>
-                  Skill:{' '}
-                  <Text style={{ fontWeight: '700' }}>
-                    {skill?.name ?? `Skill ${event.skill_id}`}
+            <Card
+              key={event.id}
+              mode="outlined"
+              style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor }}>
+              <TouchableRipple onPress={() => toggleEventExpanded(event.id)} borderless={false}>
+                <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12 }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}>
+                    <View
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+                      <Text variant="titleSmall" style={{ fontWeight: '700' }}>
+                        #{event.id}
+                      </Text>
+                      <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                        {formatEventDate(event.created_at)}
+                      </Text>
+                    </View>
+                    <Chip compact style={{ maxWidth: '100%' }} textStyle={{ flexShrink: 1 }}>
+                      {statusChipLabel}
+                    </Chip>
+                  </View>
+
+                  <Text style={{ fontWeight: '700' }} numberOfLines={2}>
+                    {skill?.name ?? 'Unknown skill'}
                   </Text>
-                </Text>
-                <Text>
-                  Caster:{' '}
-                  <Text
-                    style={
-                      launchedBySelected ? { color: '#dc2626', fontWeight: '700' } : undefined
-                    }>
-                    {characterOwnerLabel(caster, userById)}
-                  </Text>
-                </Text>
-                {targetKind ? (
-                  <Text>
-                    {targetKind === 'character'
-                      ? 'Target character: '
-                      : targetKind === 'party'
-                        ? 'Target party: '
-                        : 'Target guild: '}
-                    <Text
-                      style={
-                        targetHighlight ? { color: '#dc2626', fontWeight: '700' } : undefined
-                      }>
-                      {targetLabel}
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                    <Text variant="bodySmall" style={{ flexShrink: 1 }}>
+                      From:{' '}
+                      <Text
+                        style={
+                          launchedBySelected ? { color: '#dc2626', fontWeight: '700' } : undefined
+                        }>
+                        {characterOwnerLabel(caster, userById)}
+                      </Text>
                     </Text>
-                  </Text>
-                ) : null}
-                {event.comment ? <Text>Comment: {event.comment}</Text> : null}
-              </Card.Content>
+                    {targetKind ? (
+                      <Text variant="bodySmall" style={{ flexShrink: 1 }}>
+                        · {targetPrefix}:{' '}
+                        <Text
+                          style={
+                            targetHighlight ? { color: '#dc2626', fontWeight: '700' } : undefined
+                          }>
+                          {targetLabel}
+                        </Text>
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {event.comment ? (
+                    expanded ? (
+                      <Chip
+                        icon="comment-text-outline"
+                        style={{ alignSelf: 'flex-start', marginTop: 2 }}
+                        textStyle={{ flexShrink: 1 }}>
+                        {event.comment}
+                      </Chip>
+                    ) : (
+                      <Text variant="labelSmall" style={{ color: '#9ca3af', marginTop: 2 }}>
+                        Comment · tap to show
+                      </Text>
+                    )
+                  ) : null}
+                </Card.Content>
+              </TouchableRipple>
             </Card>
           );
         })}

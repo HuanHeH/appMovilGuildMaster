@@ -118,7 +118,9 @@ export function skillListSection(skill: Skill): number {
 
 export function guildLabel(guild: Guild | undefined) {
   if (!guild) return 'Unknown guild';
-  return `${guild.number}. ${guild.name} (${guild.number} ${guild.letter} ${guild.level ?? '-'} ${guild.modality ?? '-'})`;
+  const level = guild.level ?? '-';
+  const modality = guild.modality ?? '-';
+  return `${guild.name} (${guild.number}${guild.letter} · ${level} · ${modality})`;
 }
 
 export function characterOwnerLabel(
@@ -127,5 +129,5 @@ export function characterOwnerLabel(
 ) {
   if (!character) return '-';
   const owner = userById.get(character.user_id);
-  return `${character.id}. ${character.name} (${owner?.name ?? `User ${character.user_id}`})`;
+  return `${character.name} (${owner?.name ?? 'Unknown'})`;
 }

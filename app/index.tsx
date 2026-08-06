@@ -10,7 +10,7 @@ export default function RootIndex() {
   }
 
   if (role === 'Admin') {
-    return <Redirect href="/(admin)/admin1" />;
+    return <Redirect href="/login" />;
   }
   if (role === 'Teacher') {
     return <Redirect href="/(teacher)/profe1" />;
