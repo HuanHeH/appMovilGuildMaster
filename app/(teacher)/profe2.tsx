@@ -4,7 +4,6 @@ import { ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
-  Card,
   Divider,
   Modal,
   Portal,
@@ -18,17 +17,15 @@ import {
   apiErrorMessage,
   createEvent,
   getCharacters,
-  getGuilds,
   getParties,
   getSkills,
   getUsers,
 } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { useGuildStore } from '@/store/guild-store';
-import type { Character, CreateEventRequest, Guild, Party, Skill, UserPublic } from '@/types/game';
+import type { Character, CreateEventRequest, Party, Skill, UserPublic } from '@/types/game';
 import {
   characterOwnerLabel,
-  guildLabel,
   isGrantExpSkill,
   isTeacherExpSkill,
 } from '@/types/game';
@@ -39,7 +36,6 @@ export default function TeacherSkillsScreen() {
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
 
-  const [guild, setGuild] = useState<Guild | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
@@ -86,15 +82,13 @@ export default function TeacherSkillsScreen() {
         if (!session || !selectedGuildId) return;
         setLoading(true);
         try {
-          const [guilds, allSkills, chars, partiesData, usersData] = await Promise.all([
-            getGuilds(),
+          const [allSkills, chars, partiesData, usersData] = await Promise.all([
             getSkills(),
             getCharacters(selectedGuildId),
             getParties(selectedGuildId),
             getUsers(selectedGuildId),
           ]);
           if (!active) return;
-          setGuild(guilds.find((g) => g.id === selectedGuildId) ?? null);
           setSkills(allSkills);
           setCharacters(chars);
           setParties(partiesData);
@@ -174,12 +168,7 @@ export default function TeacherSkillsScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, gap: 8 }}>
-        <Card mode="outlined">
-          <Card.Content style={{ gap: 4 }}>
-            <Text variant="titleMedium">{guild ? guildLabel(guild) : 'Guild'}</Text>
-          </Card.Content>
-        </Card>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
 

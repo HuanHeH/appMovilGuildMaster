@@ -1,35 +1,31 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Alert, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/store/auth-store';
-import { useGuildStore } from '@/store/guild-store';
+import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
-import type { Guild } from '@/types/game';
-import { useEffect, useState } from 'react';
-import { getGuilds } from '@/lib/api';
 
 function TeacherHeader() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const clearSession = useAuthStore((state) => state.clearSession);
-  const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
-  const [guilds, setGuilds] = useState<Guild[]>([]);
+  const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
+  const selectedGuild = useGuildStore(selectSelectedGuild);
 
   useEffect(() => {
-    getGuilds()
-      .then(setGuilds)
-      .catch(() => setGuilds([]));
-  }, [session?.id]);
-
-  const selectedGuild = guilds.find((g) => g.id === selectedGuildId) ?? null;
+    if (!session) return;
+    refreshGuilds().catch(() => undefined);
+  }, [session?.id, refreshGuilds]);
 
   const onLogout = () => {
     clearSession();
     setSelectedGuildId(null);
+    useGuildStore.getState().setGuilds([]);
     router.replace('/login');
   };
 

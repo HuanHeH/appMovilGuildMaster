@@ -3,18 +3,18 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
-import { getGuilds } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
-import { useGuildStore } from '@/store/guild-store';
-import type { Guild } from '@/types/game';
+import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
 
 export default function TeacherGuildsScreen() {
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
+  const guilds = useGuildStore((state) => state.guilds);
+  const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
+  const selectedGuild = useGuildStore(selectSelectedGuild);
 
-  const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState('');
 
@@ -25,12 +25,7 @@ export default function TeacherGuildsScreen() {
         if (!session) return;
         setLoading(true);
         try {
-          const data = await getGuilds();
-          if (!active) return;
-          setGuilds(data);
-          if (selectedGuildId != null && !data.some((g) => g.id === selectedGuildId)) {
-            setSelectedGuildId(null);
-          }
+          await refreshGuilds();
         } catch {
           if (active) setSnackbar('Could not load mentorship guilds.');
         } finally {
@@ -41,14 +36,13 @@ export default function TeacherGuildsScreen() {
       return () => {
         active = false;
       };
-    }, [session, selectedGuildId, setSelectedGuildId])
+    }, [session, refreshGuilds])
   );
 
   const selectedLabel = useMemo(() => {
-    const guild = guilds.find((g) => g.id === selectedGuildId);
-    if (!guild) return 'No guild selected yet.';
-    return `Active: ${guildLabel(guild)}`;
-  }, [guilds, selectedGuildId]);
+    if (!selectedGuild) return 'No guild selected yet.';
+    return `Active: ${guildLabel(selectedGuild)}`;
+  }, [selectedGuild]);
 
   if (loading && !guilds.length) {
     return (
@@ -63,7 +57,7 @@ export default function TeacherGuildsScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Card mode="outlined">
           <Card.Content style={{ gap: 4 }}>
-            <Text variant="titleMedium">Teacher</Text>
+            <Text variant="titleMedium">User</Text>
             <Text>{session?.name}</Text>
             <Text>{session?.mail}</Text>
           </Card.Content>

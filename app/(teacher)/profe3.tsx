@@ -93,7 +93,10 @@ function teacherExpSummary(
   teacherName: string | null,
   targetLabel: string
 ): string | null {
-  if (skill?.job !== 'Teacher') return null;
+  const looksTeacher =
+    skill?.job === 'Teacher' ||
+    (event.caster_character_id == null && isExpDeltaComment(event.comment));
+  if (!looksTeacher) return null;
   const delta = parseExpDeltaComment(event.comment);
   if (!delta) return null;
   const who = teacherName?.trim() || 'Teacher';
@@ -166,7 +169,8 @@ export default function TeacherEventsScreen() {
   const [dateSort, setDateSort] = useState<DateSort>('desc');
   const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
-  const [pendingOpen, setPendingOpen] = useState(true);
+  const [allOpen, setAllOpen] = useState(true);
+  const [pendingOpen, setPendingOpen] = useState(false);
   const [approvedOpen, setApprovedOpen] = useState(false);
   const [rejectedOpen, setRejectedOpen] = useState(false);
   const [reviewEvent, setReviewEvent] = useState<GameEvent | null>(null);
@@ -225,18 +229,17 @@ export default function TeacherEventsScreen() {
   const filteredEvents = useMemo(() => {
     const filtered = events.filter((event) => {
       const skill = skillById.get(event.skill_id);
-      // Launched (by me): Teacher EXP skills I cast
+      // Launched: Teacher EXP skills I cast
       const launchedByMe =
         skill?.job === 'Teacher' && event.reviewed_by_user_id === session?.id;
-      // Reviewed (by me): events I reviewed (have review date)
+      // Reviewed: events I reviewed (have review date)
       const reviewedByMe =
         event.reviewed_by_user_id === session?.id && event.reviewed_at != null;
       const kindAllowed =
         kindFilters.length === 0 ||
         (launchedByMe && kindFilters.includes('LAUNCHED')) ||
         (reviewedByMe && kindFilters.includes('REVIEWED'));
-      const statusAllowed = statusFilters.length === 0 || statusFilters.includes(event.status);
-      return kindAllowed && statusAllowed;
+      return kindAllowed;
     });
 
     return filtered.sort((a, b) => {
@@ -250,19 +253,24 @@ export default function TeacherEventsScreen() {
       const diff = eventTime(a.created_at) - eventTime(b.created_at);
       return dateSort === 'asc' ? diff : -diff;
     });
-  }, [dateSort, dateSortField, events, kindFilters, session?.id, skillById, statusFilters]);
+  }, [dateSort, dateSortField, events, kindFilters, session?.id, skillById]);
+
+  const statusFilteredEvents = useMemo(() => {
+    if (!statusFilters.length) return filteredEvents;
+    return filteredEvents.filter((e) => statusFilters.includes(e.status));
+  }, [filteredEvents, statusFilters]);
 
   const pendingEvents = useMemo(
-    () => filteredEvents.filter((e) => e.status === 'PENDING'),
-    [filteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'PENDING'),
+    [statusFilteredEvents]
   );
   const approvedEvents = useMemo(
-    () => filteredEvents.filter((e) => e.status === 'APPROVED'),
-    [filteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'APPROVED'),
+    [statusFilteredEvents]
   );
   const rejectedEvents = useMemo(
-    () => filteredEvents.filter((e) => e.status === 'REJECTED'),
-    [filteredEvents]
+    () => statusFilteredEvents.filter((e) => e.status === 'REJECTED'),
+    [statusFilteredEvents]
   );
 
   const toggleKind = (value: EventKindFilter) => {
@@ -486,18 +494,22 @@ export default function TeacherEventsScreen() {
         keyboardShouldPersistTaps="handled">
         <Card mode="outlined">
           <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
-            <Text variant="titleSmall">Events · {guild ? guildLabel(guild) : 'Guild'}</Text>
+            <Text variant="titleSmall">Events</Text>
 
             <View style={{ gap: 4 }}>
               <Text variant="labelSmall" style={{ color: '#6b7280' }}>
                 Kind (one)
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                <Chip selected={kindFilters.includes('LAUNCHED')} onPress={() => toggleKind('LAUNCHED')}>
-                  Launched (by me)
+                <Chip
+                  selected={kindFilters.includes('LAUNCHED')}
+                  onPress={() => toggleKind('LAUNCHED')}>
+                  Launched
                 </Chip>
-                <Chip selected={kindFilters.includes('REVIEWED')} onPress={() => toggleKind('REVIEWED')}>
-                  Reviewed (by me)
+                <Chip
+                  selected={kindFilters.includes('REVIEWED')}
+                  onPress={() => toggleKind('REVIEWED')}>
+                  Reviewed
                 </Chip>
               </View>
             </View>
@@ -562,6 +574,17 @@ export default function TeacherEventsScreen() {
             </View>
           </Card.Content>
         </Card>
+
+        <List.Accordion
+          title={`All (${filteredEvents.length})`}
+          expanded={allOpen}
+          onPress={() => setAllOpen((v) => !v)}
+          style={{ backgroundColor: '#f9fafb', borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb' }}>
+          <View style={{ paddingTop: 8 }}>
+            {filteredEvents.map(renderEventCard)}
+            {!filteredEvents.length ? <Text style={{ marginBottom: 8 }}>No events.</Text> : null}
+          </View>
+        </List.Accordion>
 
         <List.Accordion
           title={`Pending (${pendingEvents.length})`}
