@@ -91,6 +91,14 @@ export async function createEvent(payload: CreateEventRequest) {
   return data;
 }
 
+export async function updateEvent(
+  id: number,
+  payload: Partial<Pick<GameEvent, 'status' | 'comment'>>
+) {
+  const { data } = await api.put<GameEvent>(API_ENDPOINTS.events.update(id), payload);
+  return data;
+}
+
 /** Student characters across all guilds (API requires guild_id per request). */
 export async function getMyCharacters(): Promise<Character[]> {
   const session = useAuthStore.getState().session;

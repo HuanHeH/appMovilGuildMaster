@@ -1,5 +1,5 @@
 export type CharacterJob = 'Mage' | 'Rogue' | 'Paladin';
-export type SkillJob = CharacterJob | 'Common';
+export type SkillJob = CharacterJob | 'Common' | 'Teacher';
 export type SkillAoe = 'SINGLE' | 'PARTY' | 'GUILD';
 export type EventStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -41,7 +41,7 @@ export interface Skill {
 
 export interface GameEvent {
   id: number;
-  caster_character_id: number;
+  caster_character_id: number | null;
   skill_id: number;
   guild_id: number;
   target_character_id: number | null;
@@ -49,11 +49,12 @@ export interface GameEvent {
   status: EventStatus;
   reviewed_by_user_id: number | null;
   created_at: string;
+  reviewed_at: string | null;
   comment: string | null;
 }
 
 export interface CreateEventRequest {
-  caster_character_id: number;
+  caster_character_id?: number | null;
   skill_id: number;
   guild_id: number;
   target_character_id?: number | null;
@@ -69,6 +70,26 @@ export interface UserPublic {
 
 export function isCommonSkill(skill: Skill) {
   return skill.job === 'Common';
+}
+
+export function isTeacherSkill(skill: Skill) {
+  return skill.job === 'Teacher';
+}
+
+export function isGrantExpSkill(skill: Skill) {
+  if (!isTeacherSkill(skill)) return false;
+  const name = skill.name.toLowerCase();
+  return name.includes('repartir exp') || name.includes('grant exp');
+}
+
+export function isRemoveExpSkill(skill: Skill) {
+  if (!isTeacherSkill(skill)) return false;
+  const name = skill.name.toLowerCase();
+  return name.includes('quitar exp') || name.includes('remove exp');
+}
+
+export function isTeacherExpSkill(skill: Skill) {
+  return isGrantExpSkill(skill) || isRemoveExpSkill(skill);
 }
 
 export function isChangeJobSkill(skill: Skill) {
