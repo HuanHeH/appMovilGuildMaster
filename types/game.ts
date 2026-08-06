@@ -122,6 +122,12 @@ export function isProgressionSkill(skill: Skill) {
   return isLevelUpSkill(skill) || isChangeJobSkill(skill);
 }
 
+/** Auto-resolved events: Teacher Grant/Remove EXP, Level Up, Change Job. */
+export function isAutoEventSkill(skill: Skill | undefined): boolean {
+  if (!skill) return false;
+  return isTeacherExpSkill(skill) || isLevelUpSkill(skill) || isChangeJobSkill(skill);
+}
+
 /** Hide obsolete Level Ups; Change Job always listed under Lvl 3 (locked until level 3 in UI). */
 export function shouldShowSkillForCharacter(skill: Skill, characterLevel: number) {
   const from = levelUpFromLevel(skill);
