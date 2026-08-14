@@ -17,6 +17,10 @@ import {
   levelUpTargetLevel,
 } from '@/types/game';
 
+type EventKindFilter = 'LAUNCHED' | 'AFFECTED';
+type DateSort = 'desc' | 'asc';
+type DateSortField = 'request' | 'review';
+
 const MONTHS = [
   'January',
   'February',
@@ -150,6 +154,10 @@ export default function EventsScreen() {
   const [users, setUsers] = useState<UserPublic[]>([]);
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kindFilters, setKindFilters] = useState<EventKindFilter[]>([]);
+  const [statusFilters, setStatusFilters] = useState<EventStatus[]>([]);
+  const [dateSort, setDateSort] = useState<DateSort>('desc');
+  const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
 
   useFocusEffect(
@@ -210,9 +218,68 @@ export default function EventsScreen() {
   const partyById = useMemo(() => new Map(parties.map((p) => [p.id, p])), [parties]);
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => eventTime(b.created_at) - eventTime(a.created_at));
-  }, [events]);
+  const filteredEvents = useMemo(() => {
+    const filtered = events.filter((event) => {
+      const launched =
+        selectedCharacter != null && event.caster_character_id === selectedCharacter.id;
+      const affectedByCharacter = event.target_character_id === selectedCharacter?.id;
+      const affectedByParty =
+        selectedCharacter?.party_id != null && event.target_party_id === selectedCharacter.party_id;
+      const skill = skillById.get(event.skill_id);
+      const teacherExp = isTeacherExpEvent(event, skill);
+      const affectedByGuild =
+        selectedCharacter != null &&
+        event.guild_id === selectedCharacter.guild_id &&
+        event.target_character_id === null &&
+        event.target_party_id === null &&
+        (skill?.aoe === 'GUILD' || teacherExp);
+      const affected = affectedByCharacter || affectedByParty || affectedByGuild;
+      const kindAllowed =
+        kindFilters.length === 0 ||
+        (launched && kindFilters.includes('LAUNCHED')) ||
+        (affected && kindFilters.includes('AFFECTED'));
+      const statusAllowed =
+        statusFilters.length === 0 || statusFilters.includes(event.status);
+      return kindAllowed && statusAllowed;
+    });
+
+    return filtered.sort((a, b) => {
+      if (dateSortField === 'review') {
+        const aHas = a.reviewed_at != null;
+        const bHas = b.reviewed_at != null;
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        const diff = eventTime(a.reviewed_at ?? '') - eventTime(b.reviewed_at ?? '');
+        return dateSort === 'asc' ? diff : -diff;
+      }
+      const diff = eventTime(a.created_at) - eventTime(b.created_at);
+      return dateSort === 'asc' ? diff : -diff;
+    });
+  }, [
+    dateSort,
+    dateSortField,
+    events,
+    kindFilters,
+    selectedCharacter,
+    skillById,
+    statusFilters,
+  ]);
+
+  const toggleKind = (value: EventKindFilter) => {
+    setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
+  };
+  const toggleStatus = (value: EventStatus) => {
+    setStatusFilters((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+    );
+  };
+  const toggleDateSort = (field: DateSortField) => {
+    if (dateSortField === field) {
+      setDateSort((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+      return;
+    }
+    setDateSortField(field);
+    setDateSort('desc');
+  };
 
   const toggleEventExpanded = (eventId: number) => {
     setExpandedEventIds((prev) =>
@@ -457,9 +524,94 @@ export default function EventsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
         keyboardShouldPersistTaps="handled">
-        <Text variant="titleMedium">Events ({sortedEvents.length})</Text>
-        {sortedEvents.map(renderEventCard)}
-        {!sortedEvents.length ? <Text>No events.</Text> : null}
+        <Card mode="outlined">
+          <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
+            <Text variant="titleSmall">Events ({filteredEvents.length})</Text>
+
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Kind (one)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  selected={kindFilters.includes('LAUNCHED')}
+                  onPress={() => toggleKind('LAUNCHED')}>
+                  Launched
+                </Chip>
+                <Chip
+                  selected={kindFilters.includes('AFFECTED')}
+                  onPress={() => toggleKind('AFFECTED')}>
+                  Received
+                </Chip>
+              </View>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Status (multi)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  selected={statusFilters.includes('PENDING')}
+                  onPress={() => toggleStatus('PENDING')}>
+                  Pending
+                </Chip>
+                <Chip
+                  selected={statusFilters.includes('APPROVED')}
+                  onPress={() => toggleStatus('APPROVED')}>
+                  Approved
+                </Chip>
+                <Chip
+                  selected={statusFilters.includes('REJECTED')}
+                  onPress={() => toggleStatus('REJECTED')}>
+                  Rejected
+                </Chip>
+                <Chip selected={statusFilters.includes('AUTO')} onPress={() => toggleStatus('AUTO')}>
+                  Auto
+                </Chip>
+              </View>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                Sort by date
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                <Chip
+                  icon={
+                    dateSortField === 'request'
+                      ? dateSort === 'desc'
+                        ? 'sort-calendar-descending'
+                        : 'sort-calendar-ascending'
+                      : 'calendar'
+                  }
+                  selected={dateSortField === 'request'}
+                  onPress={() => toggleDateSort('request')}>
+                  {dateSortField === 'request' && dateSort === 'asc'
+                    ? 'Request date · oldest'
+                    : 'Request date · newest'}
+                </Chip>
+                <Chip
+                  icon={
+                    dateSortField === 'review'
+                      ? dateSort === 'desc'
+                        ? 'sort-calendar-descending'
+                        : 'sort-calendar-ascending'
+                      : 'calendar-check'
+                  }
+                  selected={dateSortField === 'review'}
+                  onPress={() => toggleDateSort('review')}>
+                  {dateSortField === 'review' && dateSort === 'asc'
+                    ? 'Review date · oldest'
+                    : 'Review date · newest'}
+                </Chip>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {filteredEvents.map(renderEventCard)}
+        {!filteredEvents.length ? <Text>No events.</Text> : null}
       </ScrollView>
     </View>
   );
