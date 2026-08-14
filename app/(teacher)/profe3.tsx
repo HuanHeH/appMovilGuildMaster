@@ -1,20 +1,22 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
   Card,
   Chip,
   Divider,
+  Icon,
   Modal,
   Portal,
   Snackbar,
   Text,
   TextInput,
-  TouchableRipple,
 } from 'react-native-paper';
 
+import { EventCommentChip } from '@/components/EventCommentChip';
+import { eventMatchesSearch } from '@/lib/event-search';
 import {
   apiErrorMessage,
   getCharacters,
@@ -176,6 +178,13 @@ function statusBadgeStyle(status: EventStatus) {
   }
 }
 
+function reviewChipStyle(status: EventStatus) {
+  if (status === 'REJECTED') {
+    return { bg: '#fee2e2', border: '#f87171', text: '#7f1d1d', icon: 'account-cancel-outline' as const };
+  }
+  return { bg: '#dcfce7', border: '#4ade80', text: '#14532d', icon: 'account-check-outline' as const };
+}
+
 export default function TeacherEventsScreen() {
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
@@ -192,6 +201,8 @@ export default function TeacherEventsScreen() {
   const [dateSort, setDateSort] = useState<DateSort>('desc');
   const [dateSortField, setDateSortField] = useState<DateSortField>('request');
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [reviewEvent, setReviewEvent] = useState<GameEvent | null>(null);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -257,7 +268,29 @@ export default function TeacherEventsScreen() {
         (reviewedByMe && kindFilters.includes('REVIEWED'));
       const statusAllowed =
         statusFilters.length === 0 || statusFilters.includes(event.status);
-      return kindAllowed && statusAllowed;
+      if (!kindAllowed || !statusAllowed) return false;
+
+      const caster =
+        event.caster_character_id != null ? characterById.get(event.caster_character_id) : undefined;
+      const targetCharacter =
+        event.target_character_id != null ? characterById.get(event.target_character_id) : null;
+      const targetParty = event.target_party_id != null ? partyById.get(event.target_party_id) : null;
+      const reviewer =
+        event.reviewed_by_user_id != null
+          ? (userById.get(event.reviewed_by_user_id)?.name ??
+              (event.reviewed_by_user_id === session?.id ? session?.name : null) ??
+              'Mentor')
+          : null;
+
+      return eventMatchesSearch(searchQuery, event, {
+        skill,
+        guild,
+        caster,
+        targetCharacter,
+        targetParty,
+        userById,
+        reviewerName: reviewer,
+      });
     });
 
     return filtered.sort((a, b) => {
@@ -271,7 +304,25 @@ export default function TeacherEventsScreen() {
       const diff = eventTime(a.created_at) - eventTime(b.created_at);
       return dateSort === 'asc' ? diff : -diff;
     });
-  }, [dateSort, dateSortField, events, kindFilters, session?.id, skillById, statusFilters]);
+  }, [
+    characterById,
+    dateSort,
+    dateSortField,
+    events,
+    guild,
+    kindFilters,
+    partyById,
+    searchQuery,
+    session?.id,
+    session?.name,
+    skillById,
+    statusFilters,
+    userById,
+  ]);
+
+  const toggleFiltersExpanded = () => {
+    setFiltersExpanded((prev) => !prev);
+  };
 
   const toggleKind = (value: EventKindFilter) => {
     setKindFilters((prev) => (prev.includes(value) ? [] : [value]));
@@ -290,7 +341,7 @@ export default function TeacherEventsScreen() {
     setDateSort('desc');
   };
 
-  const toggleEventExpanded = (eventId: number) => {
+  const toggleCommentVisible = (eventId: number) => {
     setExpandedEventIds((prev) =>
       prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
     );
@@ -326,14 +377,6 @@ export default function TeacherEventsScreen() {
     } finally {
       setReviewSubmitting(false);
     }
-  };
-
-  const onEventPress = (event: GameEvent) => {
-    if (event.status === 'PENDING') {
-      openReviewModal(event);
-      return;
-    }
-    toggleEventExpanded(event.id);
   };
 
   if (!selectedGuildId) return <Redirect href="/(teacher)/profe1" />;
@@ -390,7 +433,7 @@ export default function TeacherEventsScreen() {
 
     const targetPrefix =
       targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
-    const expanded = expandedEventIds.includes(event.id);
+    const commentVisible = expandedEventIds.includes(event.id);
     const colors = statusCardStyle(event.status, event.reviewed_at);
     const expSummary = teacherExpSummary(event, skill, reviewer, targetShort);
     const isTeacherExp = Boolean(expSummary);
@@ -402,23 +445,21 @@ export default function TeacherEventsScreen() {
       null;
     const progression = progressionSummary(event, skill, characterName);
     const isAutoProgression = Boolean(progression);
+    const hasDisplayComment =
+      Boolean(event.comment) && !isExpDeltaComment(event.comment) && !isAutoProgression;
     const hideFromRow = isTeacherExp || isAutoProgression;
     const badge = statusBadgeStyle(event.status);
     const reviewMeta =
       (event.status === 'APPROVED' || event.status === 'REJECTED') && event.reviewed_at
-        ? [formatEventDate(event.reviewed_at), reviewer].filter(Boolean).join(' · ')
+        ? `Reviewed ${formatEventDate(event.reviewed_at)}${reviewer ? ` · ${reviewer}` : ''}`
         : null;
+    const reviewChip = reviewMeta ? reviewChipStyle(event.status) : null;
 
     return (
       <Card
         key={event.id}
         mode="outlined"
-        style={{
-          backgroundColor: colors.backgroundColor,
-          borderColor: colors.borderColor,
-          marginBottom: 8,
-          overflow: 'hidden',
-        }}>
+        style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor, overflow: 'hidden' }}>
         <View
           pointerEvents="none"
           style={{
@@ -444,8 +485,7 @@ export default function TeacherEventsScreen() {
             {badge.label}
           </Text>
         </View>
-        <TouchableRipple onPress={() => onEventPress(event)}>
-          <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12, paddingRight: 72 }}>
+        <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12, paddingRight: 72 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
               <Text variant="titleSmall" style={{ fontWeight: '700' }}>
                 #{event.id}
@@ -460,26 +500,26 @@ export default function TeacherEventsScreen() {
             </Text>
 
             <Text style={{ fontWeight: '700' }} numberOfLines={2}>
-              {skill?.name ?? 'Unknown skill'}
+              {skill?.name ??
+                (isTeacherExpEvent(event, skill)
+                  ? parseExpDeltaComment(event.comment)?.startsWith('-')
+                    ? 'Remove EXP'
+                    : 'Grant EXP'
+                  : 'Unknown skill')}
             </Text>
 
-            {reviewMeta ? (
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                {reviewMeta}
-              </Text>
-            ) : null}
-
             {!hideFromRow ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                <Text variant="bodySmall">
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
+                <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                   From:{' '}
                   <Text style={{ fontWeight: '600' }}>
                     {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
                   </Text>
                 </Text>
                 {targetKind ? (
-                  <Text variant="bodySmall">
-                    · {targetPrefix}: <Text style={{ fontWeight: '600' }}>{targetDisplay}</Text>
+                  <Text variant="bodySmall" style={{ flexShrink: 1 }}>
+                    · {targetPrefix}:{' '}
+                    <Text style={{ fontWeight: '600' }}>{targetDisplay}</Text>
                   </Text>
                 ) : null}
               </View>
@@ -491,6 +531,7 @@ export default function TeacherEventsScreen() {
                   flexDirection: 'row',
                   flexWrap: 'wrap',
                   gap: 6,
+                  marginTop: 2,
                   alignItems: 'center',
                 }}>
                 <Chip
@@ -506,26 +547,64 @@ export default function TeacherEventsScreen() {
                 ) : null}
               </View>
             ) : isAutoProgression && progression ? (
-              <Chip icon="information-outline" style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
+              <Chip
+                icon="information-outline"
+                style={{ alignSelf: 'flex-start', marginTop: 2 }}
+                textStyle={{ flexShrink: 1 }}>
                 {progression}
               </Chip>
-            ) : event.status === 'PENDING' ? (
-              <Text variant="labelSmall" style={{ color: '#9ca3af' }}>
-                Tap to approve or reject
-              </Text>
-            ) : event.comment && !isExpDeltaComment(event.comment) && !isAutoProgression ? (
-              expanded ? (
-                <Chip icon="comment-text-outline" style={{ alignSelf: 'flex-start' }}>
-                  {event.comment}
-                </Chip>
-              ) : (
-                <Text variant="labelSmall" style={{ color: '#9ca3af' }}>
-                  Comment · tap to show
-                </Text>
-              )
+            ) : null}
+
+            {reviewMeta && reviewChip ? (
+              <Chip
+                icon={reviewChip.icon}
+                style={{
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  backgroundColor: reviewChip.bg,
+                  borderWidth: 1,
+                  borderColor: reviewChip.border,
+                }}
+                textStyle={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: reviewChip.text,
+                  flexShrink: 1,
+                }}>
+                {reviewMeta}
+              </Chip>
+            ) : null}
+
+            {hasDisplayComment ? (
+              <EventCommentChip
+                label={commentVisible ? (event.comment ?? '') : 'View comment'}
+                muted={!commentVisible}
+                onPress={() => toggleCommentVisible(event.id)}
+              />
+            ) : null}
+
+            {event.status === 'PENDING' ? (
+              <Chip
+                mode="outlined"
+                icon="clipboard-check-outline"
+                onPress={() => openReviewModal(event)}
+                style={{
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  backgroundColor: '#fef9c3',
+                  borderWidth: 1,
+                  borderColor: '#eab308',
+                }}
+                textStyle={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: '#854d0e',
+                  flexShrink: 1,
+                }}>
+                Approve or reject
+              </Chip>
             ) : null}
           </Card.Content>
-        </TouchableRipple>
       </Card>
     );
   };
@@ -536,89 +615,133 @@ export default function TeacherEventsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
         keyboardShouldPersistTaps="handled">
+        <Card
+          mode="outlined"
+          style={{ backgroundColor: '#f3f4f6', borderColor: '#d1d5db', overflow: 'hidden' }}>
+          <Pressable
+            onPress={toggleFiltersExpanded}
+            android_ripple={{ color: '#e5e7eb' }}
+            style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 12,
+                paddingHorizontal: 12,
+                gap: 10,
+              }}>
+              <Icon source="filter-variant" size={22} color="#374151" />
+              <Text style={{ flex: 1, fontWeight: '700', fontSize: 16, color: '#1f2937' }}>Filters</Text>
+              <Icon
+                source={filtersExpanded ? 'chevron-up' : 'chevron-down'}
+                size={22}
+                color="#6b7280"
+              />
+            </View>
+          </Pressable>
+          {filtersExpanded ? (
+            <Card.Content style={{ paddingTop: 0, paddingBottom: 12, gap: 8 }}>
+              <TextInput
+                mode="outlined"
+                dense
+                placeholder="Search events…"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                left={<TextInput.Icon icon="magnify" />}
+                right={
+                  searchQuery ? (
+                    <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
+                  ) : undefined
+                }
+                style={{ backgroundColor: '#ffffff' }}
+              />
+
+              <View style={{ gap: 4 }}>
+                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                  Kind (one)
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                  <Chip
+                    selected={kindFilters.includes('LAUNCHED')}
+                    onPress={() => toggleKind('LAUNCHED')}>
+                    Launched
+                  </Chip>
+                  <Chip
+                    selected={kindFilters.includes('REVIEWED')}
+                    onPress={() => toggleKind('REVIEWED')}>
+                    Reviewed
+                  </Chip>
+                </View>
+              </View>
+
+              <View style={{ gap: 4 }}>
+                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                  Status (multi)
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                  <Chip
+                    selected={statusFilters.includes('PENDING')}
+                    onPress={() => toggleStatus('PENDING')}>
+                    Pending
+                  </Chip>
+                  <Chip
+                    selected={statusFilters.includes('APPROVED')}
+                    onPress={() => toggleStatus('APPROVED')}>
+                    Approved
+                  </Chip>
+                  <Chip
+                    selected={statusFilters.includes('REJECTED')}
+                    onPress={() => toggleStatus('REJECTED')}>
+                    Rejected
+                  </Chip>
+                  <Chip selected={statusFilters.includes('AUTO')} onPress={() => toggleStatus('AUTO')}>
+                    Auto
+                  </Chip>
+                </View>
+              </View>
+
+              <View style={{ gap: 4 }}>
+                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                  Sort by date
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                  <Chip
+                    icon={
+                      dateSortField === 'request'
+                        ? dateSort === 'desc'
+                          ? 'sort-calendar-descending'
+                          : 'sort-calendar-ascending'
+                        : 'calendar'
+                    }
+                    selected={dateSortField === 'request'}
+                    onPress={() => toggleDateSort('request')}>
+                    {dateSortField === 'request' && dateSort === 'asc'
+                      ? 'Request date · oldest'
+                      : 'Request date · newest'}
+                  </Chip>
+                  <Chip
+                    icon={
+                      dateSortField === 'review'
+                        ? dateSort === 'desc'
+                          ? 'sort-calendar-descending'
+                          : 'sort-calendar-ascending'
+                        : 'calendar-check'
+                    }
+                    selected={dateSortField === 'review'}
+                    onPress={() => toggleDateSort('review')}>
+                    {dateSortField === 'review' && dateSort === 'asc'
+                      ? 'Review date · oldest'
+                      : 'Review date · newest'}
+                  </Chip>
+                </View>
+              </View>
+            </Card.Content>
+          ) : null}
+        </Card>
+
         <Card mode="outlined">
-          <Card.Content style={{ gap: 6, paddingVertical: 8, paddingHorizontal: 10 }}>
+          <Card.Content style={{ paddingVertical: 8, paddingHorizontal: 10 }}>
             <Text variant="titleSmall">Events ({filteredEvents.length})</Text>
-
-            <View style={{ gap: 4 }}>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                Kind (one)
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                <Chip
-                  selected={kindFilters.includes('LAUNCHED')}
-                  onPress={() => toggleKind('LAUNCHED')}>
-                  Launched
-                </Chip>
-                <Chip
-                  selected={kindFilters.includes('REVIEWED')}
-                  onPress={() => toggleKind('REVIEWED')}>
-                  Reviewed
-                </Chip>
-              </View>
-            </View>
-
-            <View style={{ gap: 4 }}>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                Status (multi)
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                <Chip
-                  selected={statusFilters.includes('PENDING')}
-                  onPress={() => toggleStatus('PENDING')}>
-                  Pending
-                </Chip>
-                <Chip
-                  selected={statusFilters.includes('APPROVED')}
-                  onPress={() => toggleStatus('APPROVED')}>
-                  Approved
-                </Chip>
-                <Chip
-                  selected={statusFilters.includes('REJECTED')}
-                  onPress={() => toggleStatus('REJECTED')}>
-                  Rejected
-                </Chip>
-                <Chip selected={statusFilters.includes('AUTO')} onPress={() => toggleStatus('AUTO')}>
-                  Auto
-                </Chip>
-              </View>
-            </View>
-
-            <View style={{ gap: 4 }}>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                Sort by date
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-                <Chip
-                  icon={
-                    dateSortField === 'request'
-                      ? dateSort === 'desc'
-                        ? 'sort-calendar-descending'
-                        : 'sort-calendar-ascending'
-                      : 'calendar'
-                  }
-                  selected={dateSortField === 'request'}
-                  onPress={() => toggleDateSort('request')}>
-                  {dateSortField === 'request' && dateSort === 'asc'
-                    ? 'Request date · oldest'
-                    : 'Request date · newest'}
-                </Chip>
-                <Chip
-                  icon={
-                    dateSortField === 'review'
-                      ? dateSort === 'desc'
-                        ? 'sort-calendar-descending'
-                        : 'sort-calendar-ascending'
-                      : 'calendar-check'
-                  }
-                  selected={dateSortField === 'review'}
-                  onPress={() => toggleDateSort('review')}>
-                  {dateSortField === 'review' && dateSort === 'asc'
-                    ? 'Review date · oldest'
-                    : 'Review date · newest'}
-                </Chip>
-              </View>
-            </View>
           </Card.Content>
         </Card>
 

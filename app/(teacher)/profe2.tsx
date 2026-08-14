@@ -51,6 +51,7 @@ export default function TeacherSkillsScreen() {
   const [expAmount, setExpAmount] = useState('10');
   const [characterQuery, setCharacterQuery] = useState('');
   const [partyQuery, setPartyQuery] = useState('');
+  const [modalRefreshing, setModalRefreshing] = useState(false);
 
   const teacherSkills = useMemo(
     () => skills.filter((skill) => isTeacherExpSkill(skill)),
@@ -75,6 +76,20 @@ export default function TeacherSkillsScreen() {
     return parties.filter((party) => party.name.toLowerCase().includes(q));
   }, [partyQuery, parties]);
 
+  const reloadGuildData = useCallback(async () => {
+    if (!session || !selectedGuildId) return;
+    const [allSkills, chars, partiesData, usersData] = await Promise.all([
+      getSkills(),
+      getCharacters(selectedGuildId),
+      getParties(selectedGuildId),
+      getUsers(selectedGuildId),
+    ]);
+    setSkills(allSkills);
+    setCharacters(chars);
+    setParties(partiesData);
+    setUsers(usersData);
+  }, [session, selectedGuildId]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -82,17 +97,8 @@ export default function TeacherSkillsScreen() {
         if (!session || !selectedGuildId) return;
         setLoading(true);
         try {
-          const [allSkills, chars, partiesData, usersData] = await Promise.all([
-            getSkills(),
-            getCharacters(selectedGuildId),
-            getParties(selectedGuildId),
-            getUsers(selectedGuildId),
-          ]);
+          await reloadGuildData();
           if (!active) return;
-          setSkills(allSkills);
-          setCharacters(chars);
-          setParties(partiesData);
-          setUsers(usersData);
         } catch (error) {
           if (active) setSnackbar(apiErrorMessage(error, 'Could not load teacher skills.'));
         } finally {
@@ -103,10 +109,10 @@ export default function TeacherSkillsScreen() {
       return () => {
         active = false;
       };
-    }, [session, selectedGuildId])
+    }, [reloadGuildData, selectedGuildId, session])
   );
 
-  const openSkill = (skill: Skill) => {
+  const openSkill = async (skill: Skill) => {
     setActiveSkill(skill);
     setTargetKind('CHARACTER');
     setTargetCharacterId(null);
@@ -115,6 +121,14 @@ export default function TeacherSkillsScreen() {
     setCharacterQuery('');
     setPartyQuery('');
     setModalVisible(true);
+    setModalRefreshing(true);
+    try {
+      await reloadGuildData();
+    } catch (error) {
+      setSnackbar(apiErrorMessage(error, 'Could not refresh guild data.'));
+    } finally {
+      setModalRefreshing(false);
+    }
   };
 
   const submit = async () => {
@@ -145,6 +159,7 @@ export default function TeacherSkillsScreen() {
     try {
       setSubmitting(true);
       await createEvent(payload);
+      await reloadGuildData();
       setModalVisible(false);
       setActiveSkill(null);
       const verb = isGrantExpSkill(activeSkill) ? 'Granted' : 'Removed';
@@ -217,6 +232,13 @@ export default function TeacherSkillsScreen() {
             <Text variant="titleMedium">{activeSkill?.name}</Text>
             <Divider />
 
+            {modalRefreshing ? (
+              <View style={{ alignItems: 'center', paddingVertical: 28, gap: 8 }}>
+                <ActivityIndicator />
+                <Text style={{ color: '#6b7280' }}>Refreshing guild data…</Text>
+              </View>
+            ) : (
+              <>
             <Text variant="titleSmall" style={{ marginTop: 12 }}>
               EXP amount
             </Text>
@@ -338,6 +360,8 @@ export default function TeacherSkillsScreen() {
                 Confirm
               </Button>
             </View>
+              </>
+            )}
           </ScrollView>
         </Modal>
       </Portal>
