@@ -141,6 +141,21 @@ function statusCardStyle(status: EventStatus, reviewedAt: string | null) {
   return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
 }
 
+function statusBadgeStyle(status: EventStatus) {
+  switch (status) {
+    case 'PENDING':
+      return { bg: '#fef9c3', border: '#eab308', text: '#854d0e', label: 'Pending' };
+    case 'REJECTED':
+      return { bg: '#fee2e2', border: '#ef4444', text: '#991b1b', label: 'Rejected' };
+    case 'AUTO':
+      return { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Auto' };
+    case 'APPROVED':
+      return { bg: '#dcfce7', border: '#22c55e', text: '#166534', label: 'Approved' };
+    default:
+      return { bg: '#f3f4f6', border: '#9ca3af', text: '#374151', label: status };
+  }
+}
+
 export default function EventsScreen() {
   const session = useAuthStore((state) => state.session);
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
@@ -381,49 +396,51 @@ export default function EventsScreen() {
     const progression = progressionSummary(event, skill, characterName);
     const isAutoProgression = Boolean(progression);
     const hideFromRow = isTeacherExp || isAutoProgression;
-
-    let statusChipLabel = '';
-    if (event.status === 'PENDING') {
-      statusChipLabel = 'PENDING';
-    } else if (event.status === 'REJECTED') {
-      const parts = [event.status];
-      if (event.reviewed_at) parts.push(formatEventDate(event.reviewed_at));
-      if (reviewer) parts.push(reviewer);
-      statusChipLabel = parts.join(' · ');
-    } else if (event.status === 'APPROVED' && event.reviewed_at) {
-      const parts = [event.status, formatEventDate(event.reviewed_at)];
-      if (reviewer) parts.push(reviewer);
-      statusChipLabel = parts.join(' · ');
-    }
+    const badge = statusBadgeStyle(event.status);
+    const reviewMeta =
+      (event.status === 'APPROVED' || event.status === 'REJECTED') && event.reviewed_at
+        ? [formatEventDate(event.reviewed_at), reviewer].filter(Boolean).join(' · ')
+        : null;
 
     return (
       <Card
         key={event.id}
         mode="outlined"
-        style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor }}>
+        style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor, overflow: 'hidden' }}>
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 2,
+            backgroundColor: badge.bg,
+            borderColor: badge.border,
+            borderWidth: 1,
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: '700',
+              color: badge.text,
+              letterSpacing: 0.4,
+              textTransform: 'uppercase',
+            }}>
+            {badge.label}
+          </Text>
+        </View>
         <TouchableRipple onPress={() => toggleEventExpanded(event.id)} borderless={false}>
-          <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12 }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 8,
-                flexWrap: 'wrap',
-              }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
-                <Text variant="titleSmall" style={{ fontWeight: '700' }}>
-                  #{event.id}
-                </Text>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
-                  {formatEventDate(event.created_at)}
-                </Text>
-              </View>
-              {statusChipLabel ? (
-                <Chip compact style={{ maxWidth: '100%' }} textStyle={{ flexShrink: 1 }}>
-                  {statusChipLabel}
-                </Chip>
-              ) : null}
+          <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12, paddingRight: 72 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
+              <Text variant="titleSmall" style={{ fontWeight: '700' }}>
+                #{event.id}
+              </Text>
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                {formatEventDate(event.created_at)}
+              </Text>
             </View>
 
             <Text variant="labelMedium" style={{ color: '#4b5563', fontWeight: '600' }}>
@@ -438,6 +455,12 @@ export default function EventsScreen() {
                     : 'Grant EXP'
                   : 'Unknown skill')}
             </Text>
+
+            {reviewMeta ? (
+              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                {reviewMeta}
+              </Text>
+            ) : null}
 
             {!hideFromRow ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
