@@ -21,6 +21,13 @@ import {
   getSkills,
   getUsers,
 } from '@/lib/api';
+import {
+  centerScreenBg,
+  GM,
+  modalContentStyle,
+  screenBg,
+  teacherSkillCardStyle,
+} from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useGuildStore } from '@/store/guild-store';
 import type { Character, CreateEventRequest, Party, Skill, UserPublic } from '@/types/game';
@@ -175,14 +182,14 @@ export default function TeacherSkillsScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={centerScreenBg}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={screenBg}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
@@ -194,22 +201,13 @@ export default function TeacherSkillsScreen() {
           <Text>No Teacher EXP skills found. Run the SQL seed first.</Text>
         ) : (
           teacherSkills.map((skill) => (
-            <View
-              key={skill.id}
-              style={{
-                borderWidth: 1,
-                borderColor: '#2563eb',
-                borderRadius: 10,
-                padding: 12,
-                backgroundColor: '#eff6ff',
-                gap: 6,
-              }}>
-              <Text variant="titleSmall" style={{ color: '#1d4ed8', fontWeight: '700' }}>
+            <View key={skill.id} style={teacherSkillCardStyle}>
+              <Text variant="titleSmall" style={{ color: GM.primary, fontWeight: '700' }}>
                 {skill.name}
               </Text>
-              <Text style={{ color: '#1e40af' }}>Target: character / party / guild</Text>
-              <Text style={{ color: '#1e3a8a' }}>{skill.description}</Text>
-              <Button mode="contained" buttonColor="#2563eb" onPress={() => openSkill(skill)}>
+              <Text style={{ color: GM.onSurfaceMuted }}>Target: character / party / guild</Text>
+              <Text style={{ color: GM.onSurfaceVariant }}>{skill.description}</Text>
+              <Button mode="contained" buttonColor={GM.primary} onPress={() => openSkill(skill)}>
                 Use skill
               </Button>
             </View>
@@ -221,13 +219,7 @@ export default function TeacherSkillsScreen() {
         <Modal
           visible={modalVisible}
           onDismiss={() => setModalVisible(false)}
-          contentContainerStyle={{
-            margin: 16,
-            backgroundColor: 'white',
-            borderRadius: 12,
-            padding: 16,
-            maxHeight: '85%',
-          }}>
+          contentContainerStyle={modalContentStyle}>
           <ScrollView>
             <Text variant="titleMedium">{activeSkill?.name}</Text>
             <Divider />
@@ -235,7 +227,7 @@ export default function TeacherSkillsScreen() {
             {modalRefreshing ? (
               <View style={{ alignItems: 'center', paddingVertical: 28, gap: 8 }}>
                 <ActivityIndicator />
-                <Text style={{ color: '#6b7280' }}>Refreshing guild data…</Text>
+                <Text style={{ color: GM.tertiary }}>Refreshing guild data…</Text>
               </View>
             ) : (
               <>
@@ -304,7 +296,7 @@ export default function TeacherSkillsScreen() {
                     ))}
                   </RadioButton.Group>
                   {!filteredCharacters.length ? (
-                    <Text style={{ marginVertical: 8, color: '#6b7280' }}>No characters match.</Text>
+                    <Text style={{ marginVertical: 8, color: GM.tertiary }}>No characters match.</Text>
                   ) : null}
                 </ScrollView>
               </View>
@@ -343,7 +335,7 @@ export default function TeacherSkillsScreen() {
                     ))}
                   </RadioButton.Group>
                   {!filteredParties.length ? (
-                    <Text style={{ marginVertical: 8, color: '#6b7280' }}>No parties match.</Text>
+                    <Text style={{ marginVertical: 8, color: GM.tertiary }}>No parties match.</Text>
                   ) : null}
                 </ScrollView>
               </View>

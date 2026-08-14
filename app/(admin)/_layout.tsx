@@ -1,6 +1,7 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Icon, IconButton } from 'react-native-paper';
 
+import { tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function AdminTabsLayout() {
@@ -19,6 +20,7 @@ export default function AdminTabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        ...tabScreenOptions,
         headerShown: true,
         headerRight: () => (
           <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />

@@ -1,19 +1,15 @@
 import { View } from 'react-native';
 import { Chip, Icon, Text, TouchableRipple } from 'react-native-paper';
 
+import { commentChipColors } from '@/lib/guildmaster-theme';
+
 type EventCommentChipProps = {
   label: string;
   onPress: () => void;
   muted?: boolean;
 };
 
-/** Matches common-skill purple/blue chips (e.g. alumno2). */
-const PURPLE_CHIP = {
-  bg: '#eff6ff',
-  border: '#2563eb',
-  text: '#1e40af',
-  icon: '#2563eb',
-} as const;
+const CHIP = commentChipColors;
 
 const chipFrameStyle = {
   alignSelf: 'stretch' as const,
@@ -21,12 +17,11 @@ const chipFrameStyle = {
   maxWidth: '100%' as const,
   borderRadius: 16,
   borderWidth: 1,
-  borderColor: PURPLE_CHIP.border,
-  backgroundColor: PURPLE_CHIP.bg,
+  borderColor: CHIP.border,
+  backgroundColor: CHIP.bg,
   overflow: 'hidden' as const,
 };
 
-/** View comment + open comment share the same purple chip look; open state wraps multiline text. */
 export function EventCommentChip({ label, onPress, muted = false }: EventCommentChipProps) {
   if (muted) {
     return (
@@ -38,12 +33,12 @@ export function EventCommentChip({ label, onPress, muted = false }: EventComment
           alignSelf: 'flex-start',
           marginTop: 4,
           maxWidth: '100%',
-          backgroundColor: PURPLE_CHIP.bg,
+          backgroundColor: CHIP.bg,
           borderWidth: 1,
-          borderColor: PURPLE_CHIP.border,
+          borderColor: CHIP.border,
         }}
         textStyle={{
-          color: PURPLE_CHIP.text,
+          color: CHIP.text,
           fontWeight: '600',
           flexShrink: 1,
         }}>
@@ -64,7 +59,7 @@ export function EventCommentChip({ label, onPress, muted = false }: EventComment
             paddingRight: 8,
           }}>
           <View style={{ padding: 4, paddingLeft: 8 }}>
-            <Icon source="comment-text-outline" size={18} color={PURPLE_CHIP.icon} />
+            <Icon source="comment-text-outline" size={18} color={CHIP.icon} />
           </View>
           <Text
             variant="labelLarge"
@@ -73,7 +68,7 @@ export function EventCommentChip({ label, onPress, muted = false }: EventComment
               flexShrink: 1,
               marginTop: 6,
               marginRight: 8,
-              color: PURPLE_CHIP.text,
+              color: CHIP.text,
               fontWeight: '600',
               lineHeight: 20,
             }}>

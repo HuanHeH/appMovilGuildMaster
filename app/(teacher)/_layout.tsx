@@ -4,6 +4,7 @@ import { Alert, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { GM, headerStyle, tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
@@ -30,18 +31,9 @@ function TeacherHeader() {
   };
 
   return (
-    <View
-      style={{
-        paddingTop: insets.top,
-        paddingHorizontal: 12,
-        paddingBottom: 8,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        gap: 8,
-      }}>
+    <View style={{ ...headerStyle, paddingTop: insets.top }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="titleMedium" style={{ flexShrink: 1, fontWeight: '700' }}>
+        <Text variant="titleMedium" style={{ flexShrink: 1, fontWeight: '700', color: GM.primary }}>
           Teacher GuildMaster
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -80,6 +72,7 @@ export default function TeacherTabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        ...tabScreenOptions,
         header: () => <TeacherHeader />,
       }}>
       <Tabs.Screen

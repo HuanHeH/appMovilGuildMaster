@@ -18,6 +18,17 @@ import {
 import { EventCommentChip } from '@/components/EventCommentChip';
 import { eventMatchesSearch } from '@/lib/event-search';
 import {
+  centerScreenBg,
+  eventReviewChipStyle,
+  eventStatusBadgeStyle,
+  eventStatusCardStyle,
+  filtersCardStyle,
+  GM,
+  modalContentStyle,
+  mutedLabel,
+  screenBg,
+} from '@/lib/guildmaster-theme';
+import {
   apiErrorMessage,
   getCharacters,
   getEvents,
@@ -145,44 +156,6 @@ function progressionSummary(
 function eventTime(iso: string): number {
   const t = new Date(iso).getTime();
   return Number.isNaN(t) ? 0 : t;
-}
-
-function statusCardStyle(status: EventStatus, reviewedAt: string | null) {
-  if (status === 'PENDING') {
-    return { backgroundColor: '#fefce8', borderColor: '#fde68a' };
-  }
-  if (status === 'REJECTED') {
-    return { backgroundColor: '#fef2f2', borderColor: '#fecaca' };
-  }
-  if (status === 'AUTO') {
-    return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
-  }
-  if (reviewedAt) {
-    return { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' };
-  }
-  return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
-}
-
-function statusBadgeStyle(status: EventStatus) {
-  switch (status) {
-    case 'PENDING':
-      return { bg: '#fef9c3', border: '#eab308', text: '#854d0e', label: 'Pending' };
-    case 'REJECTED':
-      return { bg: '#fee2e2', border: '#ef4444', text: '#991b1b', label: 'Rejected' };
-    case 'AUTO':
-      return { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Auto' };
-    case 'APPROVED':
-      return { bg: '#dcfce7', border: '#22c55e', text: '#166534', label: 'Approved' };
-    default:
-      return { bg: '#f3f4f6', border: '#9ca3af', text: '#374151', label: status };
-  }
-}
-
-function reviewChipStyle(status: EventStatus) {
-  if (status === 'REJECTED') {
-    return { bg: '#fee2e2', border: '#f87171', text: '#7f1d1d', icon: 'account-cancel-outline' as const };
-  }
-  return { bg: '#dcfce7', border: '#4ade80', text: '#14532d', icon: 'account-check-outline' as const };
 }
 
 export default function TeacherEventsScreen() {
@@ -383,7 +356,7 @@ export default function TeacherEventsScreen() {
 
   if (loading && !events.length) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={centerScreenBg}>
         <ActivityIndicator />
       </View>
     );
@@ -434,7 +407,7 @@ export default function TeacherEventsScreen() {
     const targetPrefix =
       targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
     const commentVisible = expandedEventIds.includes(event.id);
-    const colors = statusCardStyle(event.status, event.reviewed_at);
+    const colors = eventStatusCardStyle(event.status, event.reviewed_at);
     const expSummary = teacherExpSummary(event, skill, reviewer, targetShort);
     const isTeacherExp = Boolean(expSummary);
     const characterName =
@@ -448,12 +421,12 @@ export default function TeacherEventsScreen() {
     const hasDisplayComment =
       Boolean(event.comment) && !isExpDeltaComment(event.comment) && !isAutoProgression;
     const hideFromRow = isTeacherExp || isAutoProgression;
-    const badge = statusBadgeStyle(event.status);
+    const badge = eventStatusBadgeStyle(event.status);
     const reviewMeta =
       (event.status === 'APPROVED' || event.status === 'REJECTED') && event.reviewed_at
         ? `Reviewed ${formatEventDate(event.reviewed_at)}${reviewer ? ` · ${reviewer}` : ''}`
         : null;
-    const reviewChip = reviewMeta ? reviewChipStyle(event.status) : null;
+    const reviewChip = reviewMeta ? eventReviewChipStyle(event.status) : null;
 
     return (
       <Card
@@ -490,12 +463,12 @@ export default function TeacherEventsScreen() {
               <Text variant="titleSmall" style={{ fontWeight: '700' }}>
                 #{event.id}
               </Text>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+              <Text variant="labelSmall" style={mutedLabel}>
                 {formatEventDate(event.created_at)}
               </Text>
             </View>
 
-            <Text variant="labelMedium" style={{ color: '#4b5563', fontWeight: '600' }}>
+            <Text variant="labelMedium" style={{ color: GM.onSurfaceVariant, fontWeight: '600' }}>
               {eventGuildClass}
             </Text>
 
@@ -591,14 +564,14 @@ export default function TeacherEventsScreen() {
                 style={{
                   alignSelf: 'flex-start',
                   marginTop: 6,
-                  backgroundColor: '#fef9c3',
+                  backgroundColor: GM.surfaceElevated,
                   borderWidth: 1,
-                  borderColor: '#eab308',
+                  borderColor: GM.primary,
                 }}
                 textStyle={{
                   fontSize: 13,
                   fontWeight: '700',
-                  color: '#854d0e',
+                  color: GM.primary,
                   flexShrink: 1,
                 }}>
                 Approve or reject
@@ -610,17 +583,15 @@ export default function TeacherEventsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={screenBg}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
         keyboardShouldPersistTaps="handled">
-        <Card
-          mode="outlined"
-          style={{ backgroundColor: '#f3f4f6', borderColor: '#d1d5db', overflow: 'hidden' }}>
+        <Card mode="outlined" style={{ ...filtersCardStyle, overflow: 'hidden' }}>
           <Pressable
             onPress={toggleFiltersExpanded}
-            android_ripple={{ color: '#e5e7eb' }}
+            android_ripple={{ color: GM.surfaceElevated }}
             style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}>
             <View
               style={{
@@ -630,12 +601,12 @@ export default function TeacherEventsScreen() {
                 paddingHorizontal: 12,
                 gap: 10,
               }}>
-              <Icon source="filter-variant" size={22} color="#374151" />
-              <Text style={{ flex: 1, fontWeight: '700', fontSize: 16, color: '#1f2937' }}>Filters</Text>
+              <Icon source="filter-variant" size={22} color={GM.primary} />
+              <Text style={{ flex: 1, fontWeight: '700', fontSize: 16, color: GM.onSurface }}>Filters</Text>
               <Icon
                 source={filtersExpanded ? 'chevron-up' : 'chevron-down'}
                 size={22}
-                color="#6b7280"
+                color={GM.tertiary}
               />
             </View>
           </Pressable>
@@ -653,11 +624,11 @@ export default function TeacherEventsScreen() {
                     <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
                   ) : undefined
                 }
-                style={{ backgroundColor: '#ffffff' }}
+                style={{ backgroundColor: GM.inverseSurface }}
               />
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" style={mutedLabel}>
                   Kind (one)
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -675,7 +646,7 @@ export default function TeacherEventsScreen() {
               </View>
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" style={mutedLabel}>
                   Status (multi)
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -701,7 +672,7 @@ export default function TeacherEventsScreen() {
               </View>
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" style={mutedLabel}>
                   Sort by date
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -753,13 +724,7 @@ export default function TeacherEventsScreen() {
         <Modal
           visible={Boolean(reviewEvent)}
           onDismiss={closeReviewModal}
-          contentContainerStyle={{
-            margin: 16,
-            backgroundColor: 'white',
-            borderRadius: 12,
-            padding: 16,
-            maxHeight: '85%',
-          }}>
+          contentContainerStyle={modalContentStyle}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text variant="titleMedium">Review event #{reviewEvent?.id}</Text>
             <Text style={{ marginTop: 4 }}>
@@ -791,14 +756,15 @@ export default function TeacherEventsScreen() {
               </Button>
               <Button
                 mode="outlined"
-                textColor="#dc2626"
+                textColor={GM.primary}
                 loading={reviewSubmitting}
                 onPress={() => submitReview('REJECTED')}>
                 Reject
               </Button>
               <Button
                 mode="contained"
-                buttonColor="#16a34a"
+                buttonColor={GM.primaryContainer}
+                textColor={GM.onPrimary}
                 loading={reviewSubmitting}
                 onPress={() => submitReview('APPROVED')}>
                 Approve

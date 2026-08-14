@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { View } from 'react-native';
-import { ActivityIndicator, Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, HelperText, Icon, Text, TextInput } from 'react-native-paper';
 
 import { login } from '@/lib/api';
+import { GM, centerScreenBg } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function LoginScreen() {
@@ -51,10 +52,27 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-white px-6">
+    <View style={[centerScreenBg, { paddingHorizontal: 24 }]}>
       <Stack.Screen options={{ title: 'Login', headerShown: false }} />
-      <View className="w-full max-w-md gap-3">
-        <Text variant="headlineMedium">GuildMaster Mobile</Text>
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: 0.12,
+          backgroundColor: GM.primaryContainer,
+        }}
+        pointerEvents="none"
+      />
+      <View style={{ width: '100%', maxWidth: 420, gap: 12, zIndex: 1 }}>
+        <View style={{ alignItems: 'center', marginBottom: 16, gap: 8 }}>
+          <Icon source="sword-cross" size={56} color={GM.primaryContainer} />
+          <Text variant="headlineMedium" style={{ color: GM.onBackground, textAlign: 'center' }}>
+            GuildMaster{'\n'}Mobile
+          </Text>
+        </View>
         <TextInput
           mode="outlined"
           label="Mail"
@@ -62,6 +80,8 @@ export default function LoginScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
           onChangeText={setMail}
+          style={{ backgroundColor: GM.inverseSurface }}
+          textColor={GM.inverseOnSurface}
         />
         <TextInput
           mode="outlined"
@@ -69,14 +89,22 @@ export default function LoginScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          style={{ backgroundColor: GM.inverseSurface }}
+          textColor={GM.inverseOnSurface}
         />
         <HelperText type="error" visible={!!error}>
           {error ?? ''}
         </HelperText>
-        <Button mode="contained" onPress={onLogin} disabled={loading}>
+        <Button
+          mode="contained"
+          buttonColor={GM.primaryContainer}
+          textColor={GM.onPrimary}
+          onPress={onLogin}
+          disabled={loading}
+          style={{ marginTop: 4 }}>
           {loading ? 'Signing in...' : 'Sign in'}
         </Button>
-        {loading ? <ActivityIndicator animating size="small" /> : null}
+        {loading ? <ActivityIndicator animating size="small" color={GM.primary} /> : null}
       </View>
     </View>
   );
