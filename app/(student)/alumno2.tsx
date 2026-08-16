@@ -45,6 +45,7 @@ const FALLBACK_CHANGE_JOB: Skill = {
   description: 'Change class at level 3+. Choose Mage, Rogue or Paladin (different from current).',
   aoe: 'SINGLE',
   exp_cost: 80,
+  debuff: false,
 };
 
 type SkillsByLevel = Record<(typeof LEVEL_SECTIONS)[number], Skill[]>;
@@ -265,7 +266,13 @@ export default function SkillsScreen() {
       setSkillModalVisible(false);
       setActiveSkill(null);
       setJobMenuVisible(false);
-      if (created.status === 'APPROVED') {
+      if (created.status === 'AUTO') {
+        if (isChangeJobSkill(activeSkill)) {
+          setSnackbar(`Change Job applied to ${changeJobTarget}. EXP spent.`);
+        } else {
+          setSnackbar('Level up applied. EXP spent.');
+        }
+      } else if (created.status === 'APPROVED') {
         if (isChangeJobSkill(activeSkill)) {
           setSnackbar(`Change Job applied to ${changeJobTarget}. EXP spent.`);
         } else {

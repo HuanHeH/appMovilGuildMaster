@@ -1,9 +1,20 @@
 import { Redirect } from 'expo-router';
+import { ActivityIndicator } from 'react-native-paper';
+import { View } from 'react-native';
 
 import { useAuthStore } from '@/store/auth-store';
 
 export default function RootIndex() {
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const role = useAuthStore((state) => state.session?.role);
+
+  if (!hasHydrated) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   if (!role) {
     return <Redirect href="/login" />;

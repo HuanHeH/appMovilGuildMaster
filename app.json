@@ -6,7 +6,8 @@
     "scheme": "appmovilguildmaster",
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "web": {
       "bundler": "metro",

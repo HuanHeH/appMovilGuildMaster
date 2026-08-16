@@ -1,5 +1,4 @@
 import { create } from 'axios';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { API_ENDPOINTS } from '@/lib/endpoints';
@@ -16,7 +15,7 @@ import type {
 } from '@/types/game';
 
 const configuredBaseUrl =
-  Constants.expoConfig?.extra?.apiBaseUrl ??
+  process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
   (Platform.OS === 'android' ? 'http://10.0.2.2:8081/api' : 'http://localhost:8081/api');
 
 export const api = create({
@@ -27,11 +26,29 @@ export const api = create({
 
 api.interceptors.request.use((config) => {
   const session = useAuthStore.getState().session;
-  if (session?.accessToken && session.role !== 'Admin') {
+  if (session?.accessToken) {
     config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const requestUrl = String(error?.config?.url ?? '');
+    const isLoginRequest = requestUrl.endsWith('/users/login');
+
+    if (status === 401 && !isLoginRequest) {
+      useAuthStore.getState().clearSession();
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.replace('/login');
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export function apiErrorMessage(error: unknown, fallback = 'Request failed') {
   const err = error as { response?: { data?: { message?: string }; status?: number }; message?: string };
@@ -46,6 +63,10 @@ export function apiErrorMessage(error: unknown, fallback = 'Request failed') {
 export async function login(mail: string, password: string) {
   const { data } = await api.post<LoginResponse>(API_ENDPOINTS.users.login, { mail, password });
   return data;
+}
+
+export async function logout() {
+  await api.post('/users/logout');
 }
 
 export async function getCharacters(guildId: number) {
@@ -101,16 +122,7 @@ export async function updateEvent(
 
 /** Student characters across all guilds (API requires guild_id per request). */
 export async function getMyCharacters(): Promise<Character[]> {
-  const session = useAuthStore.getState().session;
-  if (!session) return [];
-  const guilds = await getGuilds();
-  if (!guilds.length) return [];
-  const batches = await Promise.all(guilds.map((guild) => getCharacters(guild.id)));
-  const mine = new Map<number, Character>();
-  for (const batch of batches) {
-    for (const character of batch) {
-      if (character.user_id === session.id) mine.set(character.id, character);
-    }
-  }
-  return Array.from(mine.values());
+  if (!useAuthStore.getState().session) return [];
+  const { data } = await api.get<Character[]>(API_ENDPOINTS.characters.mine);
+  return data;
 }

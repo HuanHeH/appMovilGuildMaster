@@ -4,6 +4,7 @@ import { Alert, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { logout } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
@@ -22,11 +23,17 @@ function TeacherHeader() {
     refreshGuilds().catch(() => undefined);
   }, [session?.id, refreshGuilds]);
 
-  const onLogout = () => {
-    clearSession();
-    setSelectedGuildId(null);
-    useGuildStore.getState().setGuilds([]);
-    router.replace('/login');
+  const onLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Clear the local session even if the server is unavailable.
+    } finally {
+      clearSession();
+      setSelectedGuildId(null);
+      useGuildStore.getState().setGuilds([]);
+      router.replace('/login');
+    }
   };
 
   return (

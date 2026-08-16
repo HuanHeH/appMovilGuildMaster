@@ -3,6 +3,7 @@ import { Alert, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { logout } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
@@ -13,11 +14,17 @@ function StudentHeader() {
   const clearSession = useAuthStore((state) => state.clearSession);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
 
-  const onLogout = () => {
-    clearSession();
-    useCharacterStore.getState().setSelectedCharacterId(null);
-    useCharacterStore.getState().setCharacters([]);
-    router.replace('/login');
+  const onLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Clear the local session even if the server is unavailable.
+    } finally {
+      clearSession();
+      useCharacterStore.getState().setSelectedCharacterId(null);
+      useCharacterStore.getState().setCharacters([]);
+      router.replace('/login');
+    }
   };
 
   return (

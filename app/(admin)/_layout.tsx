@@ -1,6 +1,7 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Icon, IconButton } from 'react-native-paper';
 
+import { logout } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function AdminTabsLayout() {
@@ -8,9 +9,15 @@ export default function AdminTabsLayout() {
   const role = useAuthStore((state) => state.session?.role);
   const clearSession = useAuthStore((state) => state.clearSession);
 
-  const onLogout = () => {
-    clearSession();
-    router.replace('/login');
+  const onLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Clear the local session even if the server is unavailable.
+    } finally {
+      clearSession();
+      router.replace('/login');
+    }
   };
 
   if (!role) return <Redirect href="/login" />;

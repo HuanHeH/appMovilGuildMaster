@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   },
   characters: {
     list: '/characters',
+    mine: '/characters/me',
     byId: (id: number) => `/characters/${id}`,
     create: '/characters',
     update: (id: number) => `/characters/${id}`,

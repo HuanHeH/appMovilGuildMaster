@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth-store';
 
 export default function LoginScreen() {
   const session = useAuthStore((state) => state.session);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const setSession = useAuthStore((state) => state.setSession);
 
   const [mail, setMail] = useState('');
@@ -18,6 +19,14 @@ export default function LoginScreen() {
   if (session?.role === 'Admin') return <Redirect href="/(admin)/admin1" />;
   if (session?.role === 'Teacher') return <Redirect href="/(teacher)/profe1" />;
   if (session?.role === 'Student') return <Redirect href="/(student)/alumno1" />;
+
+  if (!hasHydrated) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   const onLogin = async () => {
     setLoading(true);
@@ -40,6 +49,8 @@ export default function LoginScreen() {
         setError('Invalid mail or password.');
       } else if (status === 400) {
         setError('Invalid login data.');
+      } else if (status === 429) {
+        setError('Too many attempts. Try again later.');
       } else if (status && status >= 500) {
         setError('Server error. Try again later.');
       } else {
