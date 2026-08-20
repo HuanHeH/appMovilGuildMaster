@@ -1,10 +1,11 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logout } from '@/lib/api';
+import { showAlert } from '@/lib/alert';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
@@ -77,7 +78,7 @@ export default function TeacherTabsLayout() {
   const requireGuild = (e: { preventDefault: () => void }) => {
     if (!selectedGuildId) {
       e.preventDefault();
-      Alert.alert('Select a guild');
+      showAlert('Select a guild', 'Please select a guild in the Guilds tab first.');
     }
   };
 

@@ -1,9 +1,10 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logout } from '@/lib/api';
+import { showAlert } from '@/lib/alert';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
@@ -68,7 +69,7 @@ export default function StudentTabsLayout() {
   const requireCharacter = (e: { preventDefault: () => void }) => {
     if (!selectedCharacterId) {
       e.preventDefault();
-      Alert.alert('Select a character');
+      showAlert('Select a character', 'Please select a character in the Profile tab first.');
     }
   };
 

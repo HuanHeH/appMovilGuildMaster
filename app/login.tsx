@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
   if (!hasHydrated) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', minHeight: '100vh' }}>
         <ActivityIndicator />
       </View>
     );
@@ -62,10 +62,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-white px-6">
+    <View
+      className="flex-1 items-center justify-center bg-white px-6"
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <Stack.Screen options={{ title: 'Login', headerShown: false }} />
-      <View className="w-full max-w-md gap-3">
-        <Text variant="headlineMedium">GuildMaster Mobile</Text>
+      <View className="w-full max-w-md gap-3" style={{ width: '100%', maxWidth: 420, gap: 12 }}>
+        <Text variant="headlineMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
+          GuildMaster
+        </Text>
         <TextInput
           mode="outlined"
           label="Mail"

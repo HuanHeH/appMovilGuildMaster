@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -22,6 +22,7 @@ import {
   getParties,
   getSkills,
 } from '@/lib/api';
+import { showConfirm } from '@/lib/alert';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '@/types/game';
@@ -190,48 +191,43 @@ export default function SkillsScreen() {
     setActiveSkill(null);
 
     if (selectedCharacter.exp < skill.exp_cost) {
-      Alert.alert(
+      showConfirm(
         'Not enough EXP',
-        `You need ${skill.exp_cost} EXP and your character has ${selectedCharacter.exp}.`
+        `You need ${skill.exp_cost} EXP and your character has ${selectedCharacter.exp}.`,
+        () => {}
       );
       return;
     }
     if (selectedCharacter.level < skill.level_req) {
-      Alert.alert('Skill locked', 'Blocked: insufficient level.');
+      showConfirm('Skill locked', 'Blocked: insufficient level.', () => {});
       return;
     }
 
-    Alert.alert(
-      'Confirm skill use',
-      isDebuffSkill(skill)
-        ? `Use ${skill.name} for ${skill.exp_cost} EXP? If approved, targets each gain ${Math.floor(skill.exp_cost / 2)} EXP (debuff).`
-        : `Use ${skill.name} for ${skill.exp_cost} EXP?`,
-      [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Use skill',
-        onPress: () => {
-          // Re-check EXP in case state changed before confirm.
-          if (selectedCharacter.exp < skill.exp_cost) {
-            Alert.alert(
-              'Not enough EXP',
-              `You need ${skill.exp_cost} EXP and your character has ${selectedCharacter.exp}.`
-            );
-            return;
-          }
-          setActiveSkill(skill);
-          setTargetPartyId(null);
-          setChangeJobTarget(null);
-          setJobMenuVisible(false);
-          if (isProgressionSkill(skill)) {
-            setTargetCharacterId(selectedCharacter.id);
-          } else {
-            setTargetCharacterId(null);
-          }
-          setSkillModalVisible(true);
-        },
-      },
-    ]);
+    const message = isDebuffSkill(skill)
+      ? `Use ${skill.name} for ${skill.exp_cost} EXP? If approved, targets each gain ${Math.floor(skill.exp_cost / 2)} EXP (debuff).`
+      : `Use ${skill.name} for ${skill.exp_cost} EXP?`;
+
+    showConfirm('Confirm skill use', message, () => {
+      // Re-check EXP in case state changed before confirm.
+      if (selectedCharacter.exp < skill.exp_cost) {
+        showConfirm(
+          'Not enough EXP',
+          `You need ${skill.exp_cost} EXP and your character has ${selectedCharacter.exp}.`,
+          () => {}
+        );
+        return;
+      }
+      setActiveSkill(skill);
+      setTargetPartyId(null);
+      setChangeJobTarget(null);
+      setJobMenuVisible(false);
+      if (isProgressionSkill(skill)) {
+        setTargetCharacterId(selectedCharacter.id);
+      } else {
+        setTargetCharacterId(null);
+      }
+      setSkillModalVisible(true);
+    });
   };
 
   const submitEvent = async () => {
@@ -292,7 +288,7 @@ export default function SkillsScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator />
       </View>
     );
@@ -300,14 +296,14 @@ export default function SkillsScreen() {
 
   if (!selectedCharacter) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 24 }}>
         <Text>Select a character in Profile first.</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>

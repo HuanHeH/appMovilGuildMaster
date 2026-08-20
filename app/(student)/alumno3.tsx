@@ -350,7 +350,7 @@ export default function EventsScreen() {
 
   if (loading && !selectedCharacter) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator />
       </View>
     );
@@ -358,7 +358,7 @@ export default function EventsScreen() {
 
   if (!selectedCharacter) {
     return (
-      <View className="flex-1 items-center justify-center bg-white px-6">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 24 }}>
         <Text>Select a character in Profile first.</Text>
       </View>
     );
@@ -594,7 +594,7 @@ export default function EventsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}

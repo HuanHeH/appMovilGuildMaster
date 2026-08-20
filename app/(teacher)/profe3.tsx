@@ -383,7 +383,7 @@ export default function TeacherEventsScreen() {
 
   if (loading && !events.length) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator />
       </View>
     );
@@ -610,7 +610,7 @@ export default function TeacherEventsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}

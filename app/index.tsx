@@ -10,7 +10,7 @@ export default function RootIndex() {
 
   if (!hasHydrated) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', minHeight: '100vh' }}>
         <ActivityIndicator />
       </View>
     );

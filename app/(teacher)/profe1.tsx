@@ -46,14 +46,14 @@ export default function TeacherGuildsScreen() {
 
   if (loading && !guilds.length) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Card mode="outlined">
           <Card.Content style={{ gap: 4 }}>
