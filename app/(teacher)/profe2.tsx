@@ -201,7 +201,7 @@ export default function TeacherSkillsScreen() {
           <Text>No Teacher EXP skills found. Run the SQL seed first.</Text>
         ) : (
           teacherSkills.map((skill) => (
-            <View key={skill.id} className={teacherSkillCardClass}>
+            <View key={skill.id} className={`${teacherSkillCardClass} gm-skill-card--auto`}>
               <Text variant="titleSmall" style={{ color: GM.primary, fontWeight: '700' }}>
                 {skill.name}
               </Text>
@@ -275,8 +275,12 @@ export default function TeacherSkillsScreen() {
                     mode="outlined"
                     dense
                     placeholder="Search"
+                    placeholderTextColor={GM.black}
                     value={characterQuery}
                     onChangeText={setCharacterQuery}
+                    textColor={GM.black}
+                    left={<TextInput.Icon icon="magnify" color={GM.black} />}
+                    className="gm-input-inverse"
                     style={{ flex: 1, height: 40 }}
                   />
                 </View>
@@ -318,8 +322,12 @@ export default function TeacherSkillsScreen() {
                     mode="outlined"
                     dense
                     placeholder="Search"
+                    placeholderTextColor={GM.black}
                     value={partyQuery}
                     onChangeText={setPartyQuery}
+                    textColor={GM.black}
+                    left={<TextInput.Icon icon="magnify" color={GM.black} />}
+                    className="gm-input-inverse"
                     style={{ flex: 1, height: 40 }}
                   />
                 </View>

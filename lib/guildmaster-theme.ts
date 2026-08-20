@@ -173,7 +173,10 @@ export function eventReviewChipColors(status: EventStatus) {
   };
 }
 
-export function skillCardClass(common: boolean, locked: boolean) {
+export function skillCardClass(common: boolean, locked: boolean, auto = false) {
+  if (auto) {
+    return 'gm-skill-card gm-skill-card--auto';
+  }
   if (common) {
     return locked ? 'gm-skill-card gm-skill-card--common-locked' : 'gm-skill-card gm-skill-card--common';
   }

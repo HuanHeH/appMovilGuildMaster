@@ -54,7 +54,6 @@ export default function LoginScreen() {
   return (
     <View className="gm-screen-pad">
       <Stack.Screen options={{ title: 'Login', headerShown: false }} />
-      <View className="gm-login-glow" pointerEvents="none" />
       <View className="gm-login-form">
         <View className="gm-login-brand">
           <Icon source="sword-cross" size={56} color={GM.primaryContainer} />
@@ -64,22 +63,24 @@ export default function LoginScreen() {
         </View>
         <TextInput
           mode="outlined"
-          label="Mail"
+          placeholder="Email"
+          placeholderTextColor={GM.black}
           value={mail}
           autoCapitalize="none"
           keyboardType="email-address"
           onChangeText={setMail}
           className="gm-input-inverse"
-          textColor={GM.inverseOnSurface}
+          textColor={GM.black}
         />
         <TextInput
           mode="outlined"
-          label="Password"
+          placeholder="Password"
+          placeholderTextColor={GM.black}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
           className="gm-input-inverse"
-          textColor={GM.inverseOnSurface}
+          textColor={GM.black}
         />
         <HelperText type="error" visible={!!error}>
           {error ?? ''}

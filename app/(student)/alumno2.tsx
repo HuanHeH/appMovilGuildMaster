@@ -36,6 +36,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '@/types/game';
 import {
+  isAutoEventSkill,
   isChangeJobSkill,
   isCommonSkill,
   isDebuffSkill,
@@ -334,11 +335,12 @@ export default function SkillsScreen() {
                 {sectionSkills.map((skill) => {
                   const locked = selectedCharacter.level < skill.level_req;
                   const common = isCommonSkill(skill);
+                  const auto = isAutoEventSkill(skill);
                   const colors = skillCardTextColors(common, locked);
                   return (
                     <View
                       key={skill.id}
-                      className={skillCardClass(common, locked)}
+                      className={skillCardClass(common, locked, auto)}
                       style={{ opacity: locked && !common ? 0.7 : 1, gap: 4 }}>
                       <Text
                         variant="titleSmall"

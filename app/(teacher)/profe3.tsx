@@ -362,7 +362,8 @@ export default function TeacherEventsScreen() {
     );
   }
 
-  const renderEventCard = (event: GameEvent) => {
+  const renderEventCard = (event: GameEvent, options?: { hideReviewAction?: boolean }) => {
+    const hideReviewAction = options?.hideReviewAction === true;
     const caster =
       event.caster_character_id != null ? characterById.get(event.caster_character_id) : undefined;
     const targetCharacter =
@@ -534,7 +535,7 @@ export default function TeacherEventsScreen() {
               />
             ) : null}
 
-            {event.status === 'PENDING' ? (
+            {!hideReviewAction && event.status === 'PENDING' ? (
               <Chip
                 mode="outlined"
                 icon="clipboard-check-outline"
@@ -587,12 +588,14 @@ export default function TeacherEventsScreen() {
                 mode="outlined"
                 dense
                 placeholder="Search events…"
+                placeholderTextColor={GM.black}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                left={<TextInput.Icon icon="magnify" />}
+                textColor={GM.black}
+                left={<TextInput.Icon icon="magnify" color={GM.black} />}
                 right={
                   searchQuery ? (
-                    <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
+                    <TextInput.Icon icon="close" color={GM.black} onPress={() => setSearchQuery('')} />
                   ) : undefined
                 }
                 className="gm-input-inverse"
@@ -697,11 +700,11 @@ export default function TeacherEventsScreen() {
           onDismiss={closeReviewModal}
           contentContainerStyle={modalContentStyle}>
           <ScrollView keyboardShouldPersistTaps="handled">
-            <Text variant="titleMedium">Review event #{reviewEvent?.id}</Text>
-            <Text style={{ marginTop: 4 }}>
-              {reviewEvent ? (skillById.get(reviewEvent.skill_id)?.name ?? 'Unknown skill') : ''}
+            <Text variant="titleMedium" style={{ marginBottom: 10 }}>
+              Review event
             </Text>
-            <Divider style={{ marginVertical: 10 }} />
+            {reviewEvent ? renderEventCard(reviewEvent, { hideReviewAction: true }) : null}
+            <Divider style={{ marginVertical: 12 }} />
 
             <Text variant="titleSmall">Comment (required)</Text>
             <TextInput
@@ -709,8 +712,11 @@ export default function TeacherEventsScreen() {
               multiline
               numberOfLines={4}
               placeholder="Justify approve or reject"
+              placeholderTextColor={GM.black}
               value={reviewComment}
               onChangeText={setReviewComment}
+              textColor={GM.black}
+              className="gm-input-inverse"
               style={{ marginTop: 6 }}
             />
 
@@ -726,16 +732,19 @@ export default function TeacherEventsScreen() {
                 Close
               </Button>
               <Button
-                mode="outlined"
-                textColor={GM.primary}
+                mode="contained"
+                buttonColor="#450a0a"
+                textColor="#fecaca"
+                style={{ borderWidth: 1, borderColor: '#ef4444' }}
                 loading={reviewSubmitting}
                 onPress={() => submitReview('REJECTED')}>
                 Reject
               </Button>
               <Button
                 mode="contained"
-                buttonColor={GM.primaryContainer}
-                textColor={GM.onPrimary}
+                buttonColor="#052e16"
+                textColor="#bbf7d0"
+                style={{ borderWidth: 1, borderColor: '#22c55e' }}
                 loading={reviewSubmitting}
                 onPress={() => submitReview('APPROVED')}>
                 Approve

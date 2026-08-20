@@ -73,10 +73,6 @@
     @apply flex-1 items-center justify-center bg-gm-black px-6;
   }
 
-  .gm-login-glow {
-    @apply absolute inset-0 bg-gm-primary-container opacity-[0.12];
-  }
-
   .gm-login-form {
     @apply z-10 w-full max-w-[420px] gap-3;
   }
@@ -159,6 +155,12 @@
 
   .gm-skill-card--job-locked {
     @apply border-gm-outline bg-gm-surface-container;
+  }
+
+  /* Auto skills (Level Up / Change Job / Teacher EXP) — same blue as AUTO events */
+  .gm-skill-card--auto {
+    background-color: #0c1a2e;
+    border-color: #3b82f6;
   }
 
   /* Event status cards — colors from design tokens above */
