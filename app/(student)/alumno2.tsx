@@ -54,9 +54,9 @@ const FALLBACK_CHANGE_JOB: Skill = {
   name: 'Change Job',
   level_req: 3,
   job: 'Common',
-  description: 'Change class at level 3+. Choose Mage, Rogue or Paladin (different from current).',
+  description: 'Change class at level 3. Choose a different job. Applies automatically.',
   aoe: 'SINGLE',
-  exp_cost: 80,
+  exp_cost: 40,
   debuff: false,
 };
 

@@ -114,13 +114,13 @@ export function levelUpFromLevel(skill: Skill): 1 | 2 | 3 | null {
   return (target - 1) as 1 | 2 | 3;
 }
 
-/** Destination level: 2/3/4. Supports "LEVEL UP TO LEVEL N" and legacy "Level Up I/II/III". */
+/** Destination level: 2/3/4. Supports "Level up to 2", "LEVEL UP TO LEVEL N", legacy "Level Up I/II/III". */
 export function levelUpTargetLevel(skill: Skill): 2 | 3 | 4 | null {
   if (!isLevelUpSkill(skill)) return null;
   const name = skill.name.toLowerCase();
-  if (name.includes('to level 4') || name.includes('level up iii')) return 4;
-  if (name.includes('to level 3') || name.includes('level up ii')) return 3;
-  if (name.includes('to level 2') || name.includes('level up i')) return 2;
+  if (name.includes('to level 4') || name.includes('to 4') || name.includes('level up iii')) return 4;
+  if (name.includes('to level 3') || name.includes('to 3') || name.includes('level up ii')) return 3;
+  if (name.includes('to level 2') || name.includes('to 2') || name.includes('level up i')) return 2;
   return null;
 }
 
