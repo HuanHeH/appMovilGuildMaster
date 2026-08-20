@@ -3,7 +3,7 @@ import { Alert, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GM, headerStyle, tabScreenOptions } from '@/lib/guildmaster-theme';
+import { headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
@@ -22,9 +22,9 @@ function StudentHeader() {
   };
 
   return (
-    <View style={{ ...headerStyle, paddingTop: insets.top }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="titleMedium" style={{ flexShrink: 1, fontWeight: '700', color: GM.primary }}>
+    <View className={headerClass} style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center justify-between">
+        <Text variant="titleMedium" className="gm-text-title-primary shrink">
           Student GuildMaster
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

@@ -2,7 +2,10 @@ import { MD3DarkTheme } from 'react-native-paper';
 
 import type { EventStatus } from '@/types/game';
 
-/** GuildMaster mobile palette — 60% black, 30% red, 10% white (Stitch / MD3). */
+/**
+ * Color tokens — keep in sync with CSS variables in `global.css`.
+ * Used only where Paper / navigation APIs require hex strings.
+ */
 export const GM = {
   black: '#000000',
   background: '#131313',
@@ -65,6 +68,7 @@ export const guildMasterTheme = {
   },
 };
 
+/** Tab / stack chrome (navigation needs style objects). */
 export const tabScreenOptions = {
   tabBarStyle: {
     backgroundColor: GM.black,
@@ -77,99 +81,74 @@ export const tabScreenOptions = {
   headerTintColor: GM.onBackground,
 };
 
-export const screenBg = { flex: 1, backgroundColor: GM.black } as const;
+/** className helpers → classes defined in `global.css` */
+export const screenClass = 'gm-screen';
+export const centerScreenClass = 'gm-screen-center';
+export const screenPadClass = 'gm-screen-pad';
+export const filtersCardClass = 'gm-filters-card';
+export const accordionClass = 'gm-accordion';
+export const modalContentClass = 'gm-modal-content';
+export const teacherSkillCardClass = 'gm-teacher-skill-card';
+export const highlightTextClass = 'gm-text-highlight';
+export const mutedLabelClass = 'gm-text-muted';
+export const commentChipClass = 'gm-comment-chip';
+export const commentChipTextClass = 'gm-comment-chip-text';
 
-export const centerScreenBg = {
-  flex: 1,
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-  backgroundColor: GM.black,
-};
-
-export const headerStyle = {
-  paddingHorizontal: 12,
-  paddingBottom: 8,
-  backgroundColor: GM.black,
-  borderBottomWidth: 1,
-  borderBottomColor: GM.outline,
-  gap: 8,
-};
-
-export const filtersCardStyle = {
-  backgroundColor: GM.surfaceContainer,
-  borderColor: GM.outline,
-};
-
-export const accordionStyle = {
-  backgroundColor: GM.surfaceContainer,
-  borderWidth: 1,
-  borderColor: GM.outline,
-  borderRadius: 10,
-};
-
-export const modalContentStyle = {
-  margin: 16,
-  backgroundColor: GM.surfaceContainer,
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: GM.outline,
-  padding: 16,
-  maxHeight: '85%' as const,
-};
-
-export const highlightText = { color: GM.primary, fontWeight: '700' as const };
-
-export const mutedLabel = { color: GM.tertiary };
-
-export const commentChipColors = {
-  bg: GM.surfaceElevated,
-  border: GM.primary,
-  text: GM.accentSoft,
-  icon: GM.primary,
-};
-
-export function selectedRowStyle(selected: boolean) {
-  return {
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: selected ? GM.primary : GM.outline,
-    backgroundColor: selected ? GM.surfaceElevated : GM.black,
-  };
+export function selectedRowClass(selected: boolean) {
+  return selected ? 'gm-row-selected' : 'gm-row';
 }
 
-export function eventStatusCardStyle(status: EventStatus, reviewedAt: string | null) {
+export function eventStatusCardClass(status: EventStatus) {
   switch (status) {
     case 'PENDING':
-      return { backgroundColor: GM.surfaceContainer, borderColor: GM.primary };
+      return 'gm-event-card gm-event-card--pending';
     case 'REJECTED':
-      return { backgroundColor: GM.errorContainer, borderColor: GM.error };
+      return 'gm-event-card gm-event-card--rejected';
     case 'AUTO':
-      return { backgroundColor: GM.surfaceSubtle, borderColor: GM.outline };
+      return 'gm-event-card gm-event-card--auto';
     case 'APPROVED':
-      return reviewedAt
-        ? { backgroundColor: GM.surfaceElevated, borderColor: GM.white }
-        : { backgroundColor: GM.surfaceSubtle, borderColor: GM.outline };
+      return 'gm-event-card gm-event-card--approved';
     default:
-      return { backgroundColor: GM.surfaceSubtle, borderColor: GM.outline };
+      return 'gm-event-card gm-event-card--auto';
   }
 }
 
-export function eventStatusBadgeStyle(status: EventStatus) {
+export function eventStatusBadgeClass(status: EventStatus) {
   switch (status) {
     case 'PENDING':
-      return { bg: GM.surfaceElevated, border: GM.primary, text: GM.onSurface, label: 'Pending' };
+      return {
+        wrap: 'gm-event-badge gm-event-badge--pending',
+        text: 'gm-event-badge-label gm-event-badge-text--pending',
+        label: 'Pending',
+      };
     case 'REJECTED':
-      return { bg: GM.error, border: GM.error, text: GM.onPrimary, label: 'Rejected' };
+      return {
+        wrap: 'gm-event-badge gm-event-badge--rejected',
+        text: 'gm-event-badge-label gm-event-badge-text--rejected',
+        label: 'Rejected',
+      };
     case 'AUTO':
-      return { bg: GM.surfaceElevated, border: GM.outline, text: GM.onSurfaceMuted, label: 'Auto' };
+      return {
+        wrap: 'gm-event-badge gm-event-badge--auto',
+        text: 'gm-event-badge-label gm-event-badge-text--auto',
+        label: 'Auto',
+      };
     case 'APPROVED':
-      return { bg: GM.white, border: GM.white, text: GM.black, label: 'Approved' };
+      return {
+        wrap: 'gm-event-badge gm-event-badge--approved',
+        text: 'gm-event-badge-label gm-event-badge-text--approved',
+        label: 'Approved',
+      };
     default:
-      return { bg: GM.surfaceElevated, border: GM.outline, text: GM.onSurfaceMuted, label: status };
+      return {
+        wrap: 'gm-event-badge gm-event-badge--auto',
+        text: 'gm-event-badge-label gm-event-badge-text--auto',
+        label: status,
+      };
   }
 }
 
-export function eventReviewChipStyle(status: EventStatus) {
+export function eventReviewChipColors(status: EventStatus) {
   if (status === 'REJECTED') {
     return {
       bg: GM.errorContainer,
@@ -186,30 +165,40 @@ export function eventReviewChipStyle(status: EventStatus) {
   };
 }
 
-export function skillCardStyle(common: boolean, locked: boolean) {
+export function skillCardClass(common: boolean, locked: boolean) {
   if (common) {
-    return {
-      borderColor: locked ? GM.outline : GM.primary,
-      backgroundColor: locked ? GM.surfaceElevated : GM.surfaceContainer,
-      titleColor: locked ? GM.tertiary : GM.primary,
-      descColor: locked ? GM.tertiary : GM.onSurfaceMuted,
-      buttonColor: locked ? undefined : GM.primary,
-    };
+    return locked ? 'gm-skill-card gm-skill-card--common-locked' : 'gm-skill-card gm-skill-card--common';
   }
-  return {
-    borderColor: locked ? GM.outline : GM.outlineVariant,
-    backgroundColor: locked ? GM.surfaceContainer : GM.surfaceSubtle,
-    titleColor: locked ? GM.tertiary : GM.onSurface,
-    descColor: locked ? GM.tertiary : GM.onSurfaceMuted,
-    buttonColor: undefined as string | undefined,
-  };
+  return locked ? 'gm-skill-card gm-skill-card--job-locked' : 'gm-skill-card gm-skill-card--job';
 }
 
-export const teacherSkillCardStyle = {
+/** Text colors for skill cards (Paper Text needs hex). */
+export function skillCardTextColors(common: boolean, locked: boolean) {
+  if (locked) {
+    return { title: GM.tertiary, desc: GM.tertiary, button: undefined as string | undefined };
+  }
+  if (common) {
+    return { title: GM.primary, desc: GM.onSurfaceMuted, button: GM.primary };
+  }
+  return { title: GM.onSurface, desc: GM.onSurfaceMuted, button: undefined as string | undefined };
+}
+
+/** Paper Modal / Accordion still need style objects. */
+export const modalContentStyle = {
+  margin: 16,
+  backgroundColor: GM.surfaceContainer,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: GM.outline,
+  padding: 16,
+  maxHeight: '85%' as const,
+};
+
+export const accordionStyle = {
+  backgroundColor: GM.surfaceContainer,
   borderWidth: 1,
   borderColor: GM.outline,
   borderRadius: 10,
-  padding: 12,
-  backgroundColor: GM.surfaceContainer,
-  gap: 6,
 };
+
+export const headerClass = 'gm-header';

@@ -24,11 +24,13 @@ import {
 } from '@/lib/api';
 import {
   accordionStyle,
-  centerScreenBg,
+  centerScreenClass,
   GM,
   modalContentStyle,
-  screenBg,
-  skillCardStyle,
+  screenClass,
+  screenPadClass,
+  skillCardClass,
+  skillCardTextColors,
 } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
@@ -293,7 +295,7 @@ export default function SkillsScreen() {
 
   if (loading) {
     return (
-      <View style={centerScreenBg}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
@@ -301,14 +303,14 @@ export default function SkillsScreen() {
 
   if (!selectedCharacter) {
     return (
-      <View style={[centerScreenBg, { paddingHorizontal: 24 }]}>
+      <View className={screenPadClass}>
         <Text>Select a character in Profile first.</Text>
       </View>
     );
   }
 
   return (
-    <View style={screenBg}>
+    <View className={screenClass}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
@@ -332,22 +334,15 @@ export default function SkillsScreen() {
                 {sectionSkills.map((skill) => {
                   const locked = selectedCharacter.level < skill.level_req;
                   const common = isCommonSkill(skill);
-                  const cardStyle = skillCardStyle(common, locked);
+                  const colors = skillCardTextColors(common, locked);
                   return (
                     <View
                       key={skill.id}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: cardStyle.borderColor,
-                        borderRadius: 10,
-                        padding: 10,
-                        backgroundColor: cardStyle.backgroundColor,
-                        opacity: locked && !common ? 0.7 : 1,
-                        gap: 4,
-                      }}>
+                      className={skillCardClass(common, locked)}
+                      style={{ opacity: locked && !common ? 0.7 : 1, gap: 4 }}>
                       <Text
                         variant="titleSmall"
-                        style={{ color: cardStyle.titleColor, fontWeight: common ? '700' : undefined }}>
+                        style={{ color: colors.title, fontWeight: common ? '700' : undefined }}>
                         {skill.name}
                       </Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -366,13 +361,13 @@ export default function SkillsScreen() {
                           {skill.aoe}
                         </Chip>
                       </View>
-                      <Text style={{ color: cardStyle.descColor }}>
+                      <Text style={{ color: colors.desc }}>
                         {skill.description}
                         {locked ? ' (blocked: insufficient level)' : ''}
                       </Text>
                       <Button
                         mode={locked ? 'outlined' : 'contained'}
-                        buttonColor={cardStyle.buttonColor}
+                        buttonColor={colors.button}
                         onPress={() => openUseSkillFlow(skill)}>
                         {locked ? 'Locked' : 'Use skill'}
                       </Button>

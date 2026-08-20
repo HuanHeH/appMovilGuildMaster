@@ -22,11 +22,11 @@ import {
   getUsers,
 } from '@/lib/api';
 import {
-  centerScreenBg,
+  centerScreenClass,
   GM,
   modalContentStyle,
-  screenBg,
-  teacherSkillCardStyle,
+  screenClass,
+  teacherSkillCardClass,
 } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { useGuildStore } from '@/store/guild-store';
@@ -182,14 +182,14 @@ export default function TeacherSkillsScreen() {
 
   if (loading) {
     return (
-      <View style={centerScreenBg}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View style={screenBg}>
+    <View className={screenClass}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
@@ -201,7 +201,7 @@ export default function TeacherSkillsScreen() {
           <Text>No Teacher EXP skills found. Run the SQL seed first.</Text>
         ) : (
           teacherSkills.map((skill) => (
-            <View key={skill.id} style={teacherSkillCardStyle}>
+            <View key={skill.id} className={teacherSkillCardClass}>
               <Text variant="titleSmall" style={{ color: GM.primary, fontWeight: '700' }}>
                 {skill.name}
               </Text>

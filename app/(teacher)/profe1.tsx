@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
-import { centerScreenBg, screenBg, selectedRowStyle } from '@/lib/guildmaster-theme';
+import { centerScreenClass, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
@@ -47,14 +47,14 @@ export default function TeacherGuildsScreen() {
 
   if (loading && !guilds.length) {
     return (
-      <View style={centerScreenBg}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View style={screenBg}>
+    <View className={screenClass}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Card mode="outlined">
           <Card.Content style={{ gap: 4 }}>
@@ -78,7 +78,7 @@ export default function TeacherGuildsScreen() {
                   <TouchableRipple
                     key={guild.id}
                     onPress={() => setSelectedGuildId(guild.id)}
-                    style={selectedRowStyle(selected)}>
+                    className={selectedRowClass(selected)}>
                     <List.Item
                       title={guild.name}
                       description={guildLabel(guild)}
