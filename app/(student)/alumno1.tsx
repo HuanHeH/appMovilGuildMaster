@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
 import { getGuilds } from '@/lib/api';
+import { centerScreenClass, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 import type { Guild } from '@/types/game';
@@ -51,14 +52,14 @@ export default function ProfileScreen() {
 
   if (loading && !characters.length) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View className={screenClass}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Card mode="outlined">
           <Card.Content style={{ gap: 4 }}>
@@ -83,12 +84,7 @@ export default function ProfileScreen() {
                   <TouchableRipple
                     key={character.id}
                     onPress={() => setSelectedCharacterId(character.id)}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: selected ? '#ef4444' : '#d1d5db',
-                      borderRadius: 10,
-                      backgroundColor: selected ? '#fef2f2' : 'white',
-                    }}>
+                    className={selectedRowClass(selected)}>
                     <List.Item
                       title={character.name}
                       description={`${character.job} | Lv.${character.level} | EXP ${character.exp}\n${guildLabel(guild)}`}

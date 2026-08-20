@@ -1,3 +1,269 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  GuildMaster mobile design tokens (60-30-10 black / red / white).
+  Components reference these classes via NativeWind className.
+*/
+:root {
+  --gm-black: #000000;
+  --gm-background: #131313;
+  --gm-surface-container: #0a0a0a;
+  --gm-surface-subtle: #111111;
+  --gm-surface-elevated: #1a1a1a;
+  --gm-surface-low: #1c1b1b;
+  --gm-outline: #333333;
+  --gm-outline-variant: #5b403e;
+  --gm-primary: #ef4444;
+  --gm-primary-hover: #dc2626;
+  --gm-primary-container: #ff5451;
+  --gm-primary-dark: #7f1d1d;
+  --gm-primary-deep: #930013;
+  --gm-on-primary: #ffffff;
+  --gm-on-background: #ffffff;
+  --gm-on-surface: #ffffff;
+  --gm-on-surface-muted: #f3f4f6;
+  --gm-on-surface-variant: #e4beba;
+  --gm-tertiary: #c6c6c6;
+  --gm-error: #b91c1c;
+  --gm-error-container: #7f1d1d;
+  --gm-inverse-surface: #e5e2e1;
+  --gm-inverse-on-surface: #313030;
+  --gm-white: #ffffff;
+  --gm-accent-soft: #ffb3ad;
+
+  /* Status cards — prueba colores: pending yellow, approved green, rejected red, auto blue */
+  --gm-status-pending-bg: #1a1500;
+  --gm-status-pending-border: #eab308;
+  --gm-status-pending-badge-bg: #422006;
+  --gm-status-pending-badge-border: #eab308;
+  --gm-status-pending-badge-text: #fde68a;
+
+  --gm-status-approved-bg: #052e16;
+  --gm-status-approved-border: #22c55e;
+  --gm-status-approved-badge-bg: #14532d;
+  --gm-status-approved-badge-border: #22c55e;
+  --gm-status-approved-badge-text: #bbf7d0;
+
+  --gm-status-rejected-bg: #450a0a;
+  --gm-status-rejected-border: #ef4444;
+  --gm-status-rejected-badge-bg: #7f1d1d;
+  --gm-status-rejected-badge-border: #ef4444;
+  --gm-status-rejected-badge-text: #fecaca;
+
+  --gm-status-auto-bg: #0c1a2e;
+  --gm-status-auto-border: #3b82f6;
+  --gm-status-auto-badge-bg: #1e3a5f;
+  --gm-status-auto-badge-border: #3b82f6;
+  --gm-status-auto-badge-text: #bfdbfe;
+}
+
+@layer components {
+  /* Screens */
+  .gm-screen {
+    @apply flex-1 bg-gm-black;
+  }
+
+  .gm-screen-center {
+    @apply flex-1 items-center justify-center bg-gm-black;
+  }
+
+  .gm-screen-pad {
+    @apply flex-1 items-center justify-center bg-gm-black px-6;
+  }
+
+  .gm-login-form {
+    @apply z-10 w-full max-w-[420px] gap-3;
+  }
+
+  .gm-login-brand {
+    @apply mb-4 items-center gap-2;
+  }
+
+  .gm-text-on-bg {
+    @apply text-white;
+  }
+
+  .gm-text-primary {
+    @apply text-gm-primary;
+  }
+
+  .gm-text-muted {
+    @apply text-gm-tertiary;
+  }
+
+  .gm-text-variant {
+    color: #e4beba;
+  }
+
+  .gm-text-highlight {
+    @apply font-bold text-gm-primary;
+  }
+
+  .gm-text-title-primary {
+    @apply shrink font-bold text-gm-primary;
+  }
+
+  /* App header */
+  .gm-header {
+    @apply gap-2 border-b border-gm-outline bg-gm-black px-3 pb-2;
+  }
+
+  /* Filters / accordion / modal shells */
+  .gm-filters-card {
+    @apply overflow-hidden border-gm-outline bg-gm-surface-container;
+  }
+
+  .gm-accordion {
+    @apply rounded-[10px] border border-gm-outline bg-gm-surface-container;
+  }
+
+  .gm-modal-content {
+    @apply m-4 max-h-[85%] rounded-xl border border-gm-outline bg-gm-surface-container p-4;
+  }
+
+  .gm-teacher-skill-card {
+    @apply gap-1.5 rounded-[10px] border border-gm-outline bg-gm-surface-container p-3;
+  }
+
+  /* Selection rows */
+  .gm-row {
+    @apply rounded-[10px] border border-gm-outline bg-gm-black;
+  }
+
+  .gm-row-selected {
+    @apply rounded-[10px] border border-gm-primary bg-[#1a1a1a];
+  }
+
+  /* Skill cards */
+  .gm-skill-card {
+    @apply rounded-[10px] border p-3;
+  }
+
+  .gm-skill-card--common {
+    @apply border-gm-primary bg-gm-surface-container;
+  }
+
+  .gm-skill-card--common-locked {
+    @apply border-gm-outline bg-[#1a1a1a];
+  }
+
+  .gm-skill-card--job {
+    @apply border-[#5b403e] bg-gm-surface;
+  }
+
+  .gm-skill-card--job-locked {
+    @apply border-gm-outline bg-gm-surface-container;
+  }
+
+  /* Auto skills (Level Up / Change Job / Teacher EXP) — same blue as AUTO events */
+  .gm-skill-card--auto {
+    background-color: #0c1a2e;
+    border-color: #3b82f6;
+  }
+
+  /* Event status cards — colors from design tokens above */
+  .gm-event-card {
+    @apply overflow-hidden border;
+  }
+
+  .gm-event-card--pending {
+    background-color: #1a1500;
+    border-color: #eab308;
+  }
+
+  .gm-event-card--approved {
+    background-color: #052e16;
+    border-color: #22c55e;
+  }
+
+  .gm-event-card--rejected {
+    background-color: #450a0a;
+    border-color: #ef4444;
+  }
+
+  .gm-event-card--auto {
+    background-color: #0c1a2e;
+    border-color: #3b82f6;
+  }
+
+  .gm-event-badge {
+    @apply absolute right-2 top-2 z-[2] rounded border px-1.5 py-0.5;
+  }
+
+  .gm-event-badge--pending {
+    background-color: #422006;
+    border-color: #eab308;
+  }
+
+  .gm-event-badge-text--pending {
+    color: #fde68a;
+  }
+
+  .gm-event-badge--approved {
+    background-color: #14532d;
+    border-color: #22c55e;
+  }
+
+  .gm-event-badge-text--approved {
+    color: #bbf7d0;
+  }
+
+  .gm-event-badge--rejected {
+    background-color: #7f1d1d;
+    border-color: #ef4444;
+  }
+
+  .gm-event-badge-text--rejected {
+    color: #fecaca;
+  }
+
+  .gm-event-badge--auto {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  .gm-event-badge-text--auto {
+    color: #bfdbfe;
+  }
+
+  .gm-event-badge-label {
+    @apply text-[10px] font-bold uppercase tracking-wide;
+  }
+
+  /* Comment chip */
+  .gm-comment-chip {
+    @apply mt-1 max-w-full self-start overflow-hidden rounded-2xl border border-gm-primary bg-[#1a1a1a];
+  }
+
+  .gm-comment-chip-text {
+    @apply font-semibold text-[#ffb3ad];
+  }
+
+  /* Review chips */
+  .gm-review-chip--approved {
+    @apply border-white bg-[#1a1a1a];
+  }
+
+  .gm-review-chip-text--approved {
+    @apply text-white;
+  }
+
+  .gm-review-chip--rejected {
+    @apply border-gm-error bg-[#7f1d1d];
+  }
+
+  .gm-review-chip-text--rejected {
+    @apply text-white;
+  }
+
+  .gm-input-inverse {
+    @apply bg-[#e5e2e1];
+  }
+
+  .gm-filters-header {
+    @apply flex-row items-center gap-2.5 px-3 py-3;
+  }
+}
+

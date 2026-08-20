@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
+import { headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
@@ -29,18 +30,9 @@ function StudentHeader() {
   };
 
   return (
-    <View
-      style={{
-        paddingTop: insets.top,
-        paddingHorizontal: 12,
-        paddingBottom: 8,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        gap: 8,
-      }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text variant="titleMedium" style={{ flexShrink: 1, fontWeight: '700' }}>
+    <View className={headerClass} style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center justify-between">
+        <Text variant="titleMedium" className="gm-text-title-primary shrink">
           Student GuildMaster
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -79,6 +71,7 @@ export default function StudentTabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        ...tabScreenOptions,
         header: () => <StudentHeader />,
       }}>
       <Tabs.Screen

@@ -23,10 +23,21 @@ import {
   getSkills,
 } from '@/lib/api';
 import { showConfirm } from '@/lib/alert';
+import {
+  accordionStyle,
+  centerScreenClass,
+  GM,
+  modalContentStyle,
+  screenClass,
+  screenPadClass,
+  skillCardClass,
+  skillCardTextColors,
+} from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '@/types/game';
 import {
+  isAutoEventSkill,
   isChangeJobSkill,
   isCommonSkill,
   isDebuffSkill,
@@ -288,7 +299,7 @@ export default function SkillsScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
@@ -296,14 +307,14 @@ export default function SkillsScreen() {
 
   if (!selectedCharacter) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 24 }}>
+      <View className={screenPadClass}>
         <Text>Select a character in Profile first.</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View className={screenClass}>
       <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Text variant="titleMedium">Skills</Text>
       </View>
@@ -322,43 +333,21 @@ export default function SkillsScreen() {
               description={`${sectionSkills.length} skill${sectionSkills.length === 1 ? '' : 's'}`}
               expanded={expanded}
               onPress={() => toggleLevel(level)}
-              style={{
-                backgroundColor: '#f9fafb',
-                borderWidth: 1,
-                borderColor: '#e5e7eb',
-                borderRadius: 10,
-              }}>
+              style={accordionStyle}>
               <View style={{ gap: 8, paddingBottom: 8, paddingHorizontal: 4 }}>
                 {sectionSkills.map((skill) => {
                   const locked = selectedCharacter.level < skill.level_req;
                   const common = isCommonSkill(skill);
+                  const auto = isAutoEventSkill(skill);
+                  const colors = skillCardTextColors(common, locked);
                   return (
                     <View
                       key={skill.id}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: common ? '#2563eb' : locked ? '#d1d5db' : '#e5e7eb',
-                        borderRadius: 10,
-                        padding: 10,
-                        backgroundColor: common
-                          ? locked
-                            ? '#dbeafe'
-                            : '#eff6ff'
-                          : locked
-                            ? '#f3f4f6'
-                            : '#ffffff',
-                        opacity: locked && !common ? 0.7 : 1,
-                        gap: 4,
-                      }}>
+                      className={skillCardClass(common, locked, auto)}
+                      style={{ opacity: locked && !common ? 0.7 : 1, gap: 4 }}>
                       <Text
                         variant="titleSmall"
-                        style={
-                          common
-                            ? { color: '#1d4ed8', fontWeight: '700' }
-                            : locked
-                              ? { color: '#6b7280' }
-                              : undefined
-                        }>
+                        style={{ color: colors.title, fontWeight: common ? '700' : undefined }}>
                         {skill.name}
                       </Text>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -366,31 +355,24 @@ export default function SkillsScreen() {
                           compact
                           icon="lightning-bolt"
                           style={locked ? { opacity: 0.75 } : undefined}
-                          textStyle={locked ? { color: '#6b7280' } : undefined}>
+                          textStyle={locked ? { color: GM.tertiary } : undefined}>
                           {skill.exp_cost} EXP
                         </Chip>
                         <Chip
                           compact
                           icon="target"
                           style={locked ? { opacity: 0.75 } : undefined}
-                          textStyle={locked ? { color: '#6b7280' } : undefined}>
+                          textStyle={locked ? { color: GM.tertiary } : undefined}>
                           {skill.aoe}
                         </Chip>
                       </View>
-                      <Text
-                        style={
-                          common
-                            ? { color: '#1e3a8a' }
-                            : locked
-                              ? { color: '#6b7280' }
-                              : undefined
-                        }>
+                      <Text style={{ color: colors.desc }}>
                         {skill.description}
                         {locked ? ' (blocked: insufficient level)' : ''}
                       </Text>
                       <Button
                         mode={locked ? 'outlined' : 'contained'}
-                        buttonColor={common && !locked ? '#2563eb' : undefined}
+                        buttonColor={colors.button}
                         onPress={() => openUseSkillFlow(skill)}>
                         {locked ? 'Locked' : 'Use skill'}
                       </Button>
@@ -410,13 +392,7 @@ export default function SkillsScreen() {
             setSkillModalVisible(false);
             setJobMenuVisible(false);
           }}
-          contentContainerStyle={{
-            margin: 16,
-            backgroundColor: 'white',
-            borderRadius: 12,
-            padding: 16,
-            maxHeight: '80%',
-          }}>
+          contentContainerStyle={{ ...modalContentStyle, maxHeight: '80%' }}>
           <Text variant="titleMedium">Launch: {activeSkill?.name}</Text>
           <Divider />
 

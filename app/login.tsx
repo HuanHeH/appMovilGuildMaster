@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { View } from 'react-native';
-import { ActivityIndicator, Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, HelperText, Icon, Text, TextInput } from 'react-native-paper';
 
 import { login } from '@/lib/api';
+import { GM } from '@/lib/guildmaster-theme';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function LoginScreen() {
@@ -22,8 +23,8 @@ export default function LoginScreen() {
 
   if (!hasHydrated) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', minHeight: '100vh' }}>
-        <ActivityIndicator />
+      <View className="gm-screen-center" style={{ minHeight: '100vh' }}>
+        <ActivityIndicator color={GM.primary} />
       </View>
     );
   }
@@ -62,36 +63,49 @@ export default function LoginScreen() {
   };
 
   return (
-    <View
-      className="flex-1 items-center justify-center bg-white px-6"
-      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <View className="gm-screen-pad" style={{ minHeight: '100vh' }}>
       <Stack.Screen options={{ title: 'Login', headerShown: false }} />
-      <View className="w-full max-w-md gap-3" style={{ width: '100%', maxWidth: 420, gap: 12 }}>
-        <Text variant="headlineMedium" style={{ textAlign: 'center', marginBottom: 8 }}>
-          GuildMaster
-        </Text>
+      <View className="gm-login-form">
+        <View className="gm-login-brand">
+          <Icon source="sword-cross" size={56} color={GM.primaryContainer} />
+          <Text variant="headlineMedium" className="gm-text-on-bg text-center">
+            GuildMaster{'\n'}Mobile
+          </Text>
+        </View>
         <TextInput
           mode="outlined"
-          label="Mail"
+          placeholder="Email"
+          placeholderTextColor={GM.black}
           value={mail}
           autoCapitalize="none"
           keyboardType="email-address"
           onChangeText={setMail}
+          className="gm-input-inverse"
+          textColor={GM.black}
         />
         <TextInput
           mode="outlined"
-          label="Password"
+          placeholder="Password"
+          placeholderTextColor={GM.black}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          className="gm-input-inverse"
+          textColor={GM.black}
         />
         <HelperText type="error" visible={!!error}>
           {error ?? ''}
         </HelperText>
-        <Button mode="contained" onPress={onLogin} disabled={loading}>
+        <Button
+          mode="contained"
+          buttonColor={GM.primaryContainer}
+          textColor={GM.onPrimary}
+          onPress={onLogin}
+          disabled={loading}
+          style={{ marginTop: 4 }}>
           {loading ? 'Signing in...' : 'Sign in'}
         </Button>
-        {loading ? <ActivityIndicator animating size="small" /> : null}
+        {loading ? <ActivityIndicator animating size="small" color={GM.primary} /> : null}
       </View>
     </View>
   );

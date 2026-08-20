@@ -5,6 +5,18 @@ import { ActivityIndicator, Card, Chip, Icon, Text, TextInput } from 'react-nati
 
 import { getCharacters, getEvents, getGuilds, getParties, getSkills, getUsers } from '@/lib/api';
 import { eventMatchesSearch } from '@/lib/event-search';
+import {
+  centerScreenClass,
+  eventReviewChipColors,
+  eventStatusBadgeClass,
+  eventStatusCardClass,
+  filtersCardClass,
+  GM,
+  highlightTextClass,
+  mutedLabelClass,
+  screenClass,
+  screenPadClass,
+} from '@/lib/guildmaster-theme';
 import { EventCommentChip } from '@/components/EventCommentChip';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
@@ -124,45 +136,6 @@ function progressionSummary(
 function eventTime(iso: string): number {
   const t = new Date(iso).getTime();
   return Number.isNaN(t) ? 0 : t;
-}
-
-function statusCardStyle(status: EventStatus, reviewedAt: string | null) {
-  if (status === 'PENDING') {
-    return { backgroundColor: '#fefce8', borderColor: '#fde68a' };
-  }
-  if (status === 'REJECTED') {
-    return { backgroundColor: '#fef2f2', borderColor: '#fecaca' };
-  }
-  if (status === 'AUTO') {
-    return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
-  }
-  // APPROVED with review date
-  if (reviewedAt) {
-    return { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' };
-  }
-  return { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' };
-}
-
-function statusBadgeStyle(status: EventStatus) {
-  switch (status) {
-    case 'PENDING':
-      return { bg: '#fef9c3', border: '#eab308', text: '#854d0e', label: 'Pending' };
-    case 'REJECTED':
-      return { bg: '#fee2e2', border: '#ef4444', text: '#991b1b', label: 'Rejected' };
-    case 'AUTO':
-      return { bg: '#dbeafe', border: '#3b82f6', text: '#1e40af', label: 'Auto' };
-    case 'APPROVED':
-      return { bg: '#dcfce7', border: '#22c55e', text: '#166534', label: 'Approved' };
-    default:
-      return { bg: '#f3f4f6', border: '#9ca3af', text: '#374151', label: status };
-  }
-}
-
-function reviewChipStyle(status: EventStatus) {
-  if (status === 'REJECTED') {
-    return { bg: '#fee2e2', border: '#f87171', text: '#7f1d1d', icon: 'account-cancel-outline' as const };
-  }
-  return { bg: '#dcfce7', border: '#4ade80', text: '#14532d', icon: 'account-check-outline' as const };
 }
 
 export default function EventsScreen() {
@@ -350,7 +323,7 @@ export default function EventsScreen() {
 
   if (loading && !selectedCharacter) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+      <View className={centerScreenClass}>
         <ActivityIndicator />
       </View>
     );
@@ -358,7 +331,7 @@ export default function EventsScreen() {
 
   if (!selectedCharacter) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', paddingHorizontal: 24 }}>
+      <View className={screenPadClass}>
         <Text>Select a character in Profile first.</Text>
       </View>
     );
@@ -422,7 +395,7 @@ export default function EventsScreen() {
     const targetPrefix =
       targetKind === 'character' ? 'Char' : targetKind === 'party' ? 'Party' : 'Guild';
     const commentVisible = expandedEventIds.includes(event.id);
-    const colors = statusCardStyle(event.status, event.reviewed_at);
+    const cardClass = eventStatusCardClass(event.status);
     const reviewer =
       event.reviewed_by_user_id != null
         ? (userById.get(event.reviewed_by_user_id)?.name ??
@@ -442,54 +415,32 @@ export default function EventsScreen() {
     const hasDisplayComment =
       Boolean(event.comment) && !isExpDeltaComment(event.comment) && !isAutoProgression;
     const hideFromRow = isTeacherExp || isAutoProgression;
-    const badge = statusBadgeStyle(event.status);
+    const badge = eventStatusBadgeClass(event.status);
     const reviewMeta =
       (event.status === 'APPROVED' || event.status === 'REJECTED') && event.reviewed_at
         ? `Reviewed ${formatEventDate(event.reviewed_at)}${reviewer ? ` · ${reviewer}` : ''}`
         : null;
-    const reviewChip = reviewMeta ? reviewChipStyle(event.status) : null;
+    const reviewChip = reviewMeta ? eventReviewChipColors(event.status) : null;
 
     return (
       <Card
         key={event.id}
         mode="outlined"
-        style={{ backgroundColor: colors.backgroundColor, borderColor: colors.borderColor, overflow: 'hidden' }}>
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 2,
-            backgroundColor: badge.bg,
-            borderColor: badge.border,
-            borderWidth: 1,
-            borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-          }}>
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: '700',
-              color: badge.text,
-              letterSpacing: 0.4,
-              textTransform: 'uppercase',
-            }}>
-            {badge.label}
-          </Text>
+        className={cardClass}>
+        <View pointerEvents="none" className={badge.wrap}>
+          <Text className={badge.text}>{badge.label}</Text>
         </View>
         <Card.Content style={{ gap: 6, paddingVertical: 12, paddingHorizontal: 12, paddingRight: 72 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 }}>
               <Text variant="titleSmall" style={{ fontWeight: '700' }}>
                 #{event.id}
               </Text>
-              <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+              <Text variant="labelSmall" className={mutedLabelClass}>
                 {formatEventDate(event.created_at)}
               </Text>
             </View>
 
-            <Text variant="labelMedium" style={{ color: '#4b5563', fontWeight: '600' }}>
+            <Text variant="labelMedium" style={{ color: GM.onSurfaceVariant, fontWeight: '600' }}>
               {eventGuildClass}
             </Text>
 
@@ -507,11 +458,7 @@ export default function EventsScreen() {
                 <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                   From:{' '}
                   <Text
-                    style={
-                      launchedBySelected
-                        ? { color: '#dc2626', fontWeight: '700' }
-                        : undefined
-                    }>
+                    className={launchedBySelected ? highlightTextClass : undefined}>
                     {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
                   </Text>
                 </Text>
@@ -519,11 +466,7 @@ export default function EventsScreen() {
                   <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                     · {targetPrefix}:{' '}
                     <Text
-                      style={
-                        targetHighlight
-                          ? { color: '#dc2626', fontWeight: '700' }
-                          : undefined
-                      }>
+                      className={targetHighlight ? highlightTextClass : undefined}>
                       {targetDisplay}
                     </Text>
                   </Text>
@@ -594,32 +537,23 @@ export default function EventsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View className={screenClass}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
         keyboardShouldPersistTaps="handled">
-        <Card
-          mode="outlined"
-          style={{ backgroundColor: '#f3f4f6', borderColor: '#d1d5db', overflow: 'hidden' }}>
+        <Card mode="outlined" className={filtersCardClass}>
           <Pressable
             onPress={toggleFiltersExpanded}
-            android_ripple={{ color: '#e5e7eb' }}
+            android_ripple={{ color: GM.surfaceElevated }}
             style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: 12,
-                paddingHorizontal: 12,
-                gap: 10,
-              }}>
-              <Icon source="filter-variant" size={22} color="#374151" />
-              <Text style={{ flex: 1, fontWeight: '700', fontSize: 16, color: '#1f2937' }}>Filters</Text>
+            <View className="gm-filters-header">
+              <Icon source="filter-variant" size={22} color={GM.primary} />
+              <Text className="flex-1 text-base font-bold gm-text-on-bg">Filters</Text>
               <Icon
                 source={filtersExpanded ? 'chevron-up' : 'chevron-down'}
                 size={22}
-                color="#6b7280"
+                color={GM.tertiary}
               />
             </View>
           </Pressable>
@@ -629,19 +563,21 @@ export default function EventsScreen() {
                 mode="outlined"
                 dense
                 placeholder="Search events…"
+                placeholderTextColor={GM.black}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                left={<TextInput.Icon icon="magnify" />}
+                textColor={GM.black}
+                left={<TextInput.Icon icon="magnify" color={GM.black} />}
                 right={
                   searchQuery ? (
-                    <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} />
+                    <TextInput.Icon icon="close" color={GM.black} onPress={() => setSearchQuery('')} />
                   ) : undefined
                 }
-                style={{ backgroundColor: '#ffffff' }}
+                className="gm-input-inverse"
               />
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" className={mutedLabelClass}>
                   Kind (one)
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -659,7 +595,7 @@ export default function EventsScreen() {
               </View>
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" className={mutedLabelClass}>
                   Status (multi)
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
@@ -685,7 +621,7 @@ export default function EventsScreen() {
               </View>
 
               <View style={{ gap: 4 }}>
-                <Text variant="labelSmall" style={{ color: '#6b7280' }}>
+                <Text variant="labelSmall" className={mutedLabelClass}>
                   Sort by date
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
