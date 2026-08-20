@@ -151,10 +151,18 @@ export function eventStatusBadgeClass(status: EventStatus) {
 export function eventReviewChipColors(status: EventStatus) {
   if (status === 'REJECTED') {
     return {
-      bg: GM.errorContainer,
-      border: GM.error,
-      text: GM.onPrimary,
+      bg: '#450a0a',
+      border: '#ef4444',
+      text: '#fecaca',
       icon: 'account-cancel-outline' as const,
+    };
+  }
+  if (status === 'APPROVED') {
+    return {
+      bg: '#052e16',
+      border: '#22c55e',
+      text: '#bbf7d0',
+      icon: 'account-check-outline' as const,
     };
   }
   return {

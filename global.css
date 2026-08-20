@@ -33,30 +33,30 @@
   --gm-white: #ffffff;
   --gm-accent-soft: #ffb3ad;
 
-  /* Status cards (default Stitch palette; overridden on "prueba colores") */
-  --gm-status-pending-bg: #0a0a0a;
-  --gm-status-pending-border: #ef4444;
-  --gm-status-pending-badge-bg: #1a1a1a;
-  --gm-status-pending-badge-border: #ef4444;
-  --gm-status-pending-badge-text: #ffffff;
+  /* Status cards — prueba colores: pending yellow, approved green, rejected red, auto blue */
+  --gm-status-pending-bg: #1a1500;
+  --gm-status-pending-border: #eab308;
+  --gm-status-pending-badge-bg: #422006;
+  --gm-status-pending-badge-border: #eab308;
+  --gm-status-pending-badge-text: #fde68a;
 
-  --gm-status-approved-bg: #1a1a1a;
-  --gm-status-approved-border: #ffffff;
-  --gm-status-approved-badge-bg: #ffffff;
-  --gm-status-approved-badge-border: #ffffff;
-  --gm-status-approved-badge-text: #000000;
+  --gm-status-approved-bg: #052e16;
+  --gm-status-approved-border: #22c55e;
+  --gm-status-approved-badge-bg: #14532d;
+  --gm-status-approved-badge-border: #22c55e;
+  --gm-status-approved-badge-text: #bbf7d0;
 
-  --gm-status-rejected-bg: #7f1d1d;
-  --gm-status-rejected-border: #b91c1c;
-  --gm-status-rejected-badge-bg: #b91c1c;
-  --gm-status-rejected-badge-border: #b91c1c;
-  --gm-status-rejected-badge-text: #ffffff;
+  --gm-status-rejected-bg: #450a0a;
+  --gm-status-rejected-border: #ef4444;
+  --gm-status-rejected-badge-bg: #7f1d1d;
+  --gm-status-rejected-badge-border: #ef4444;
+  --gm-status-rejected-badge-text: #fecaca;
 
-  --gm-status-auto-bg: #111111;
-  --gm-status-auto-border: #333333;
-  --gm-status-auto-badge-bg: #1a1a1a;
-  --gm-status-auto-badge-border: #333333;
-  --gm-status-auto-badge-text: #f3f4f6;
+  --gm-status-auto-bg: #0c1a2e;
+  --gm-status-auto-border: #3b82f6;
+  --gm-status-auto-badge-bg: #1e3a5f;
+  --gm-status-auto-badge-border: #3b82f6;
+  --gm-status-auto-badge-text: #bfdbfe;
 }
 
 @layer components {
@@ -167,23 +167,23 @@
   }
 
   .gm-event-card--pending {
-    background-color: var(--gm-status-pending-bg);
-    border-color: var(--gm-status-pending-border);
+    background-color: #1a1500;
+    border-color: #eab308;
   }
 
   .gm-event-card--approved {
-    background-color: var(--gm-status-approved-bg);
-    border-color: var(--gm-status-approved-border);
+    background-color: #052e16;
+    border-color: #22c55e;
   }
 
   .gm-event-card--rejected {
-    background-color: var(--gm-status-rejected-bg);
-    border-color: var(--gm-status-rejected-border);
+    background-color: #450a0a;
+    border-color: #ef4444;
   }
 
   .gm-event-card--auto {
-    background-color: var(--gm-status-auto-bg);
-    border-color: var(--gm-status-auto-border);
+    background-color: #0c1a2e;
+    border-color: #3b82f6;
   }
 
   .gm-event-badge {
@@ -191,39 +191,39 @@
   }
 
   .gm-event-badge--pending {
-    background-color: var(--gm-status-pending-badge-bg);
-    border-color: var(--gm-status-pending-badge-border);
+    background-color: #422006;
+    border-color: #eab308;
   }
 
   .gm-event-badge-text--pending {
-    color: var(--gm-status-pending-badge-text);
+    color: #fde68a;
   }
 
   .gm-event-badge--approved {
-    background-color: var(--gm-status-approved-badge-bg);
-    border-color: var(--gm-status-approved-badge-border);
+    background-color: #14532d;
+    border-color: #22c55e;
   }
 
   .gm-event-badge-text--approved {
-    color: var(--gm-status-approved-badge-text);
+    color: #bbf7d0;
   }
 
   .gm-event-badge--rejected {
-    background-color: var(--gm-status-rejected-badge-bg);
-    border-color: var(--gm-status-rejected-badge-border);
+    background-color: #7f1d1d;
+    border-color: #ef4444;
   }
 
   .gm-event-badge-text--rejected {
-    color: var(--gm-status-rejected-badge-text);
+    color: #fecaca;
   }
 
   .gm-event-badge--auto {
-    background-color: var(--gm-status-auto-badge-bg);
-    border-color: var(--gm-status-auto-badge-border);
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
   }
 
   .gm-event-badge-text--auto {
-    color: var(--gm-status-auto-badge-text);
+    color: #bfdbfe;
   }
 
   .gm-event-badge-label {

@@ -542,14 +542,14 @@ export default function TeacherEventsScreen() {
                 style={{
                   alignSelf: 'flex-start',
                   marginTop: 6,
-                  backgroundColor: GM.surfaceElevated,
+                  backgroundColor: '#422006',
                   borderWidth: 1,
-                  borderColor: GM.primary,
+                  borderColor: '#eab308',
                 }}
                 textStyle={{
                   fontSize: 13,
                   fontWeight: '700',
-                  color: GM.primary,
+                  color: '#fde68a',
                   flexShrink: 1,
                 }}>
                 Approve or reject
