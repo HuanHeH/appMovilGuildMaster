@@ -120,6 +120,11 @@ export async function updateEvent(
   return data;
 }
 
+/** Student: cancel own PENDING event (refunds ExpCost). Admin: delete any. */
+export async function deleteEvent(id: number) {
+  await api.delete(API_ENDPOINTS.events.remove(id));
+}
+
 /** Student characters across all guilds (API requires guild_id per request). */
 export async function getMyCharacters(): Promise<Character[]> {
   if (!useAuthStore.getState().session) return [];

@@ -16,6 +16,7 @@ import {
 } from 'react-native-paper';
 
 import { EventCommentChip } from '@/components/EventCommentChip';
+import { showConfirm } from '@/lib/alert';
 import { eventMatchesSearch } from '@/lib/event-search';
 import {
   centerScreenClass,
@@ -352,6 +353,30 @@ export default function TeacherEventsScreen() {
     }
   };
 
+  const revertToPending = (event: GameEvent) => {
+    if (reviewSubmitting) return;
+    const hint =
+      event.status === 'APPROVED'
+        ? 'Debuff target gifts (if any) will be clawed back.'
+        : 'Caster will be charged ExpCost again (reject refund is undone).';
+    showConfirm(
+      'Return to pending',
+      `Set #${event.id} back to PENDING?\n${hint}`,
+      async () => {
+        try {
+          setReviewSubmitting(true);
+          await updateEvent(event.id, { status: 'PENDING', comment: null });
+          await reloadEvents();
+          setSnackbar('Event returned to pending.');
+        } catch (error) {
+          setSnackbar(apiErrorMessage(error, 'Could not revert event.'));
+        } finally {
+          setReviewSubmitting(false);
+        }
+      }
+    );
+  };
+
   if (!selectedGuildId) return <Redirect href="/(teacher)/profe1" />;
 
   if (loading && !events.length) {
@@ -554,6 +579,32 @@ export default function TeacherEventsScreen() {
                   flexShrink: 1,
                 }}>
                 Approve or reject
+              </Chip>
+            ) : null}
+
+            {!hideReviewAction &&
+            (event.status === 'APPROVED' || event.status === 'REJECTED') &&
+            !isTeacherExp &&
+            !isAutoProgression ? (
+              <Chip
+                mode="outlined"
+                icon="undo"
+                disabled={reviewSubmitting}
+                onPress={() => revertToPending(event)}
+                style={{
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  backgroundColor: '#1e3a5f',
+                  borderWidth: 1,
+                  borderColor: '#60a5fa',
+                }}
+                textStyle={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: '#bfdbfe',
+                  flexShrink: 1,
+                }}>
+                Return to pending
               </Chip>
             ) : null}
           </Card.Content>

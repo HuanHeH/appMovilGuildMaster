@@ -1,9 +1,10 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { ActivityIndicator, Card, Chip, Icon, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Card, Chip, Icon, Snackbar, Text, TextInput } from 'react-native-paper';
 
-import { getCharacters, getEvents, getGuilds, getParties, getSkills, getUsers } from '@/lib/api';
+import { getCharacters, getEvents, getGuilds, getParties, getSkills, getUsers, deleteEvent, apiErrorMessage } from '@/lib/api';
+import { showConfirm } from '@/lib/alert';
 import { eventMatchesSearch } from '@/lib/event-search';
 import {
   centerScreenClass,
@@ -158,6 +159,8 @@ export default function EventsScreen() {
   const [expandedEventIds, setExpandedEventIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [snackbar, setSnackbar] = useState('');
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -316,6 +319,29 @@ export default function EventsScreen() {
   const toggleCommentVisible = (eventId: number) => {
     setExpandedEventIds((prev) =>
       prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+    );
+  };
+
+  const cancelPendingEvent = (event: GameEvent) => {
+    if (cancellingId != null) return;
+    const skill = skillById.get(event.skill_id);
+    const cost = skill?.exp_cost ?? 0;
+    showConfirm(
+      'Cancel event',
+      `Cancel #${event.id} and refund ${cost} EXP to your character?`,
+      async () => {
+        setCancellingId(event.id);
+        try {
+          await deleteEvent(event.id);
+          setEvents((prev) => prev.filter((e) => e.id !== event.id));
+          await refreshCharacters();
+          setSnackbar('Event cancelled. EXP refunded.');
+        } catch (error) {
+          setSnackbar(apiErrorMessage(error, 'Could not cancel event.'));
+        } finally {
+          setCancellingId(null);
+        }
+      }
     );
   };
 
@@ -531,6 +557,29 @@ export default function EventsScreen() {
                 onPress={() => toggleCommentVisible(event.id)}
               />
             ) : null}
+
+            {launchedBySelected && event.status === 'PENDING' ? (
+              <Chip
+                mode="outlined"
+                icon="close-circle-outline"
+                disabled={cancellingId === event.id}
+                onPress={() => cancelPendingEvent(event)}
+                style={{
+                  alignSelf: 'flex-start',
+                  marginTop: 6,
+                  backgroundColor: '#450a0a',
+                  borderWidth: 1,
+                  borderColor: '#ef4444',
+                }}
+                textStyle={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: '#fecaca',
+                  flexShrink: 1,
+                }}>
+                {cancellingId === event.id ? 'Cancelling…' : 'Cancel event'}
+              </Chip>
+            ) : null}
           </Card.Content>
       </Card>
     );
@@ -668,6 +717,10 @@ export default function EventsScreen() {
         {filteredEvents.map(renderEventCard)}
         {!filteredEvents.length ? <Text>No events.</Text> : null}
       </ScrollView>
+
+      <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={2500}>
+        {snackbar}
+      </Snackbar>
     </View>
   );
 }
