@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { MD3DarkTheme } from 'react-native-paper';
 
 import type { EventStatus } from '@/types/game';
@@ -32,6 +33,10 @@ export const GM = {
   inverseOnSurface: '#313030',
   white: '#ffffff',
   accentSoft: '#ffb3ad',
+  /** Selected character/guild row (bluish, matches AUTO event tint). */
+  selectedBg: '#0c1a2e',
+  selectedBorder: '#3b82f6',
+  selectedText: '#93c5fd',
 } as const;
 
 export const guildMasterTheme = {
@@ -202,9 +207,12 @@ export function skillCardTextColors(common: boolean, locked: boolean) {
   return { title: GM.onSurface, desc: GM.onSurfaceMuted, button: undefined as string | undefined };
 }
 
-/** Paper Modal / Accordion still need style objects. */
+/** Paper Modal / Accordion still need style objects. Web: capped width, centered. */
 export const modalContentStyle = {
   margin: 16,
+  alignSelf: 'center' as const,
+  width: Platform.OS === 'web' ? ('92%' as const) : ('100%' as const),
+  maxWidth: Platform.OS === 'web' ? 480 : undefined,
   backgroundColor: GM.surfaceContainer,
   borderRadius: 12,
   borderWidth: 1,

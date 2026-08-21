@@ -197,7 +197,10 @@ export default function TeacherEventsScreen() {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [reviewEvent, setReviewEvent] = useState<GameEvent | null>(null);
   const [reviewComment, setReviewComment] = useState('');
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSubmittingAction, setReviewSubmittingAction] = useState<
+    'APPROVED' | 'REJECTED' | 'REVERT' | null
+  >(null);
+  const reviewBusy = reviewSubmittingAction != null;
   const [snackbar, setSnackbar] = useState('');
 
   const reloadEvents = useCallback(async () => {
@@ -345,20 +348,20 @@ export default function TeacherEventsScreen() {
   };
 
   const closeReviewModal = () => {
-    if (reviewSubmitting) return;
+    if (reviewBusy) return;
     setReviewEvent(null);
     setReviewComment('');
   };
 
   const submitReview = async (status: 'APPROVED' | 'REJECTED') => {
-    if (!reviewEvent) return;
+    if (!reviewEvent || reviewBusy) return;
     const comment = reviewComment.trim();
     if (!comment) {
       setSnackbar('Comment is required to approve or reject.');
       return;
     }
     try {
-      setReviewSubmitting(true);
+      setReviewSubmittingAction(status);
       await updateEvent(reviewEvent.id, { status, comment });
       setReviewEvent(null);
       setReviewComment('');
@@ -367,12 +370,12 @@ export default function TeacherEventsScreen() {
     } catch (error) {
       setSnackbar(apiErrorMessage(error, 'Could not update event.'));
     } finally {
-      setReviewSubmitting(false);
+      setReviewSubmittingAction(null);
     }
   };
 
   const revertToPending = (event: GameEvent) => {
-    if (reviewSubmitting) return;
+    if (reviewBusy) return;
     const hint =
       event.status === 'APPROVED'
         ? 'Debuff target gifts (if any) will be clawed back.'
@@ -382,14 +385,14 @@ export default function TeacherEventsScreen() {
       `Set #${event.id} back to PENDING?\n${hint}`,
       async () => {
         try {
-          setReviewSubmitting(true);
+          setReviewSubmittingAction('REVERT');
           await updateEvent(event.id, { status: 'PENDING', comment: null });
           await reloadEvents();
           setSnackbar('Event returned to pending.');
         } catch (error) {
           setSnackbar(apiErrorMessage(error, 'Could not revert event.'));
         } finally {
-          setReviewSubmitting(false);
+          setReviewSubmittingAction(null);
         }
       }
     );
@@ -589,7 +592,7 @@ export default function TeacherEventsScreen() {
                 <Chip
                   mode="outlined"
                   icon="undo"
-                  disabled={reviewSubmitting}
+                  disabled={reviewBusy}
                   onPress={() => revertToPending(event)}
                   style={{
                     alignSelf: 'flex-start',
@@ -753,7 +756,7 @@ export default function TeacherEventsScreen() {
               <Chip
                 mode="outlined"
                 icon="undo"
-                disabled={reviewSubmitting}
+                disabled={reviewBusy}
                 onPress={() => revertToPending(event)}
                 style={{
                   alignSelf: 'flex-start',
@@ -807,10 +810,10 @@ export default function TeacherEventsScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 textColor={GM.black}
-                left={<TextInput.Icon icon="magnify" color={GM.black} />}
+                left={<TextInput.Icon icon="magnify" color={GM.black} size={20} forceTextInputFocus={false} />}
                 right={
                   searchQuery ? (
-                    <TextInput.Icon icon="close" color={GM.black} onPress={() => setSearchQuery('')} />
+                    <TextInput.Icon icon="close" color={GM.black} size={20} onPress={() => setSearchQuery('')} />
                   ) : undefined
                 }
                 className="gm-input-inverse"
@@ -936,7 +939,16 @@ export default function TeacherEventsScreen() {
               onChangeText={setReviewComment}
               textColor={GM.black}
               className="gm-input-inverse"
-              style={{ marginTop: 6 }}
+              style={{ marginTop: 6, backgroundColor: GM.white }}
+              contentStyle={{ backgroundColor: GM.white }}
+              theme={{
+                colors: {
+                  surface: GM.white,
+                  onSurface: GM.black,
+                  onSurfaceVariant: GM.black,
+                  background: GM.white,
+                },
+              }}
             />
 
             <View
@@ -947,7 +959,7 @@ export default function TeacherEventsScreen() {
                 gap: 8,
                 marginTop: 16,
               }}>
-              <Button onPress={closeReviewModal} disabled={reviewSubmitting}>
+              <Button onPress={closeReviewModal} disabled={reviewBusy}>
                 Close
               </Button>
               <Button
@@ -955,7 +967,8 @@ export default function TeacherEventsScreen() {
                 buttonColor="#450a0a"
                 textColor="#fecaca"
                 style={{ borderWidth: 1, borderColor: '#ef4444' }}
-                loading={reviewSubmitting}
+                disabled={reviewBusy}
+                loading={reviewSubmittingAction === 'REJECTED'}
                 onPress={() => submitReview('REJECTED')}>
                 Reject
               </Button>
@@ -964,7 +977,8 @@ export default function TeacherEventsScreen() {
                 buttonColor="#052e16"
                 textColor="#bbf7d0"
                 style={{ borderWidth: 1, borderColor: '#22c55e' }}
-                loading={reviewSubmitting}
+                disabled={reviewBusy}
+                loading={reviewSubmittingAction === 'APPROVED'}
                 onPress={() => submitReview('APPROVED')}>
                 Approve
               </Button>

@@ -108,7 +108,7 @@ export default function TeacherGuildsScreen() {
                         <DesktopCellText
                           primary={guild.name}
                           secondary={selected ? 'Selected' : null}
-                          secondaryStyle={selected ? { color: GM.primary } : undefined}
+                          secondaryStyle={selected ? { color: GM.selectedText } : undefined}
                         />
                       </DesktopCell>
                       <DesktopCell flex={1.2}>
@@ -138,8 +138,13 @@ export default function TeacherGuildsScreen() {
                     <List.Item
                       title={guild.name}
                       description={guildLabel(guild)}
+                      titleStyle={selected ? { color: GM.selectedText } : undefined}
                       left={(props) => (
-                        <List.Icon {...props} icon={selected ? 'check-circle' : 'school'} />
+                        <List.Icon
+                          {...props}
+                          icon={selected ? 'check-circle' : 'school'}
+                          color={selected ? GM.selectedBorder : props.color}
+                        />
                       )}
                     />
                   </TouchableRipple>

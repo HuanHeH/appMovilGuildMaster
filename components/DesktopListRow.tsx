@@ -80,9 +80,9 @@ export function DesktopListRow({ children, onPress, selected, style }: DesktopLi
           paddingHorizontal: 14,
           paddingVertical: 12,
           borderWidth: 1,
-          borderColor: selected ? GM.primary : GM.outline,
+          borderColor: selected ? GM.selectedBorder : GM.outline,
           borderRadius: 8,
-          backgroundColor: selected ? GM.surfaceElevated : GM.surfaceContainer,
+          backgroundColor: selected ? GM.selectedBg : GM.surfaceContainer,
         },
         style,
       ]}>

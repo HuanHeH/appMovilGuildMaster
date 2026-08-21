@@ -114,7 +114,7 @@ export default function ProfileScreen() {
                         <DesktopCellText
                           primary={character.name}
                           secondary={selected ? 'Selected' : null}
-                          secondaryStyle={selected ? { color: GM.primary } : undefined}
+                          secondaryStyle={selected ? { color: GM.selectedText } : undefined}
                         />
                       </DesktopCell>
                       <DesktopCell flex={0.9}>
@@ -145,8 +145,13 @@ export default function ProfileScreen() {
                     <List.Item
                       title={character.name}
                       description={`${character.job} | Lv.${character.level} | EXP ${character.exp}\n${guildLabel(guild)}`}
+                      titleStyle={selected ? { color: GM.selectedText } : undefined}
                       left={(props) => (
-                        <List.Icon {...props} icon={selected ? 'check-circle' : 'account'} />
+                        <List.Icon
+                          {...props}
+                          icon={selected ? 'check-circle' : 'account'}
+                          color={selected ? GM.selectedBorder : props.color}
+                        />
                       )}
                     />
                   </TouchableRipple>

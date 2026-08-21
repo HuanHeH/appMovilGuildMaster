@@ -748,10 +748,10 @@ export default function EventsScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 textColor={GM.black}
-                left={<TextInput.Icon icon="magnify" color={GM.black} />}
+                left={<TextInput.Icon icon="magnify" color={GM.black} size={20} forceTextInputFocus={false} />}
                 right={
                   searchQuery ? (
-                    <TextInput.Icon icon="close" color={GM.black} onPress={() => setSearchQuery('')} />
+                    <TextInput.Icon icon="close" color={GM.black} size={20} onPress={() => setSearchQuery('')} />
                   ) : undefined
                 }
                 className="gm-input-inverse"

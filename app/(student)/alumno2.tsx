@@ -6,6 +6,7 @@ import {
   Button,
   Chip,
   Divider,
+  Icon,
   List,
   Menu,
   Modal,
@@ -15,6 +16,11 @@ import {
   Text,
 } from 'react-native-paper';
 
+import {
+  DesktopCell,
+  DesktopCellText,
+  DesktopListHeader,
+} from '@/components/DesktopListRow';
 import {
   apiErrorMessage,
   createEvent,
@@ -33,6 +39,7 @@ import {
   skillCardClass,
   skillCardTextColors,
 } from '@/lib/guildmaster-theme';
+import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '@/types/game';
@@ -48,6 +55,25 @@ import {
 
 const JOBS: CharacterJob[] = ['Mage', 'Rogue', 'Paladin'];
 const LEVEL_SECTIONS = [1, 2, 3, 4] as const;
+
+const SKILL_COLS = [
+  { key: 'action', label: 'Launch', flex: 0.95, minWidth: 148 },
+  { key: 'name', label: 'Skill', flex: 1.2 },
+  { key: 'exp', label: 'EXP', flex: 0.5, minWidth: 64 },
+  { key: 'aoe', label: 'AOE', flex: 0.85, minWidth: 100 },
+  { key: 'debuff', label: 'Debuff', flex: 0.85, minWidth: 100 },
+  { key: 'desc', label: 'Description', flex: 1.8 },
+];
+
+function buffDebuffIcon(debuff: boolean) {
+  return ({ size }: { size: number }) => (
+    <Icon
+      source={debuff ? 'skull-crossbones' : 'shield-check'}
+      size={size}
+      color={debuff ? '#fecaca' : '#22c55e'}
+    />
+  );
+}
 
 const FALLBACK_CHANGE_JOB: Skill = {
   id: -1,
@@ -95,6 +121,7 @@ function groupSkillsByLevel(allSkills: Skill[], character: Character): SkillsByL
 }
 
 export default function SkillsScreen() {
+  const isDesktop = useIsDesktop();
   const session = useAuthStore((state) => state.session);
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
   const refreshCharacters = useCharacterStore((state) => state.refreshCharacters);
@@ -335,21 +362,155 @@ export default function SkillsScreen() {
               onPress={() => toggleLevel(level)}
               style={accordionStyle}>
               <View style={{ gap: 8, paddingBottom: 8, paddingHorizontal: 4 }}>
+                {isDesktop ? <DesktopListHeader columns={SKILL_COLS} /> : null}
                 {sectionSkills.map((skill) => {
                   const locked = selectedCharacter.level < skill.level_req;
                   const common = isCommonSkill(skill);
                   const auto = isAutoEventSkill(skill);
                   const colors = skillCardTextColors(common, locked);
+                  const desc =
+                    skill.description + (locked ? ' (blocked: insufficient level)' : '');
+
+                  if (isDesktop) {
+                    return (
+                      <View
+                        key={skill.id}
+                        className={skillCardClass(common, locked, auto)}
+                        style={{
+                          opacity: locked && !common ? 0.7 : 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 12,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                        }}>
+                        <DesktopCell flex={0.95} minWidth={148}>
+                          <Button
+                            mode={locked ? 'outlined' : 'contained'}
+                            icon={locked ? 'lock' : 'lightning-bolt'}
+                            buttonColor={locked ? undefined : GM.primaryContainer}
+                            textColor={locked ? GM.tertiary : GM.onPrimary}
+                            onPress={() => openUseSkillFlow(skill)}
+                            contentStyle={{ height: 42, paddingHorizontal: 6 }}
+                            labelStyle={{ fontWeight: '800', fontSize: 13, letterSpacing: 0.2 }}
+                            style={{
+                              alignSelf: 'flex-start',
+                              minWidth: 132,
+                              borderRadius: 8,
+                              elevation: locked ? 0 : 3,
+                            }}>
+                            {locked ? 'Locked' : 'Launch'}
+                          </Button>
+                        </DesktopCell>
+                        <DesktopCell flex={1.2}>
+                          <DesktopCellText
+                            primary={skill.name}
+                            secondary={
+                              common
+                                ? auto
+                                  ? 'Common · Auto'
+                                  : 'Common'
+                                : skill.job
+                            }
+                            primaryStyle={{ color: colors.title }}
+                            secondaryStyle={{ color: colors.desc }}
+                          />
+                        </DesktopCell>
+                        <DesktopCell flex={0.5} minWidth={64}>
+                          <DesktopCellText
+                            primary={`${skill.exp_cost}`}
+                            primaryStyle={locked ? { color: GM.tertiary } : undefined}
+                          />
+                        </DesktopCell>
+                        <DesktopCell flex={0.85} minWidth={100}>
+                          <Chip
+                            compact
+                            icon="target"
+                            style={
+                              locked
+                                ? { opacity: 0.75, alignSelf: 'flex-start' }
+                                : { alignSelf: 'flex-start' }
+                            }
+                            textStyle={locked ? { color: GM.tertiary } : undefined}>
+                            {skill.aoe}
+                          </Chip>
+                        </DesktopCell>
+                        <DesktopCell flex={0.85} minWidth={100}>
+                          <Chip
+                            compact
+                            icon={buffDebuffIcon(isDebuffSkill(skill))}
+                            style={{
+                              alignSelf: 'flex-start',
+                              backgroundColor: isDebuffSkill(skill) ? '#7f1d1d' : '#14532d',
+                              borderWidth: 1,
+                              borderColor: isDebuffSkill(skill) ? '#ef4444' : '#22c55e',
+                              opacity: locked ? 0.75 : 1,
+                            }}
+                            textStyle={{
+                              color: isDebuffSkill(skill) ? '#fecaca' : '#bbf7d0',
+                              fontWeight: '700',
+                            }}>
+                            {isDebuffSkill(skill) ? 'Debuff' : 'Buff'}
+                          </Chip>
+                        </DesktopCell>
+                        <DesktopCell flex={1.8}>
+                          <DesktopCellText
+                            primary={desc}
+                            primaryStyle={{
+                              color: colors.desc,
+                              fontWeight: '500',
+                              fontSize: 13,
+                            }}
+                            numberOfLines={3}
+                          />
+                        </DesktopCell>
+                      </View>
+                    );
+                  }
+
                   return (
                     <View
                       key={skill.id}
                       className={skillCardClass(common, locked, auto)}
-                      style={{ opacity: locked && !common ? 0.7 : 1, gap: 4 }}>
-                      <Text
-                        variant="titleSmall"
-                        style={{ color: colors.title, fontWeight: common ? '700' : undefined }}>
-                        {skill.name}
-                      </Text>
+                      style={{ opacity: locked && !common ? 0.7 : 1, gap: 6 }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 10,
+                        }}>
+                        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                          <Text
+                            variant="titleMedium"
+                            numberOfLines={2}
+                            style={{
+                              color: colors.title,
+                              fontWeight: '800',
+                              fontSize: 17,
+                            }}>
+                            {skill.name}
+                          </Text>
+                          <Text style={{ color: colors.desc, fontSize: 12, fontWeight: '600' }}>
+                            {common ? (auto ? 'Common · Auto' : 'Common') : skill.job}
+                          </Text>
+                        </View>
+                        <Button
+                          compact
+                          mode={locked ? 'outlined' : 'contained'}
+                          icon={locked ? 'lock' : 'lightning-bolt'}
+                          buttonColor={locked ? undefined : GM.primaryContainer}
+                          textColor={locked ? GM.tertiary : GM.onPrimary}
+                          onPress={() => openUseSkillFlow(skill)}
+                          contentStyle={{ height: 36, paddingHorizontal: 6 }}
+                          labelStyle={{ fontWeight: '800', fontSize: 12, letterSpacing: 0.2 }}
+                          style={{
+                            borderRadius: 8,
+                            borderColor: locked ? GM.outline : undefined,
+                            elevation: locked ? 0 : 3,
+                          }}>
+                          {locked ? 'Locked' : 'Launch'}
+                        </Button>
+                      </View>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                         <Chip
                           compact
@@ -365,17 +526,23 @@ export default function SkillsScreen() {
                           textStyle={locked ? { color: GM.tertiary } : undefined}>
                           {skill.aoe}
                         </Chip>
+                        <Chip
+                          compact
+                          icon={buffDebuffIcon(isDebuffSkill(skill))}
+                          style={{
+                            backgroundColor: isDebuffSkill(skill) ? '#7f1d1d' : '#14532d',
+                            borderWidth: 1,
+                            borderColor: isDebuffSkill(skill) ? '#ef4444' : '#22c55e',
+                            opacity: locked ? 0.75 : 1,
+                          }}
+                          textStyle={{
+                            color: isDebuffSkill(skill) ? '#fecaca' : '#bbf7d0',
+                            fontWeight: '700',
+                          }}>
+                          {isDebuffSkill(skill) ? 'Debuff' : 'Buff'}
+                        </Chip>
                       </View>
-                      <Text style={{ color: colors.desc }}>
-                        {skill.description}
-                        {locked ? ' (blocked: insufficient level)' : ''}
-                      </Text>
-                      <Button
-                        mode={locked ? 'outlined' : 'contained'}
-                        buttonColor={colors.button}
-                        onPress={() => openUseSkillFlow(skill)}>
-                        {locked ? 'Locked' : 'Use skill'}
-                      </Button>
+                      <Text style={{ color: colors.desc }}>{desc}</Text>
                     </View>
                   );
                 })}

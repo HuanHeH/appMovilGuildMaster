@@ -120,7 +120,7 @@
   }
 
   .gm-modal-content {
-    @apply m-4 max-h-[85%] rounded-xl border border-gm-outline bg-gm-surface-container p-4;
+    @apply m-4 max-h-[85%] w-[92%] max-w-[480px] self-center rounded-xl border border-gm-outline bg-gm-surface-container p-4;
   }
 
   .gm-teacher-skill-card {
@@ -133,7 +133,10 @@
   }
 
   .gm-row-selected {
-    @apply rounded-[10px] border border-gm-primary bg-[#1a1a1a];
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: #3b82f6;
+    background-color: #0c1a2e;
   }
 
   /* Skill cards */
@@ -309,16 +312,20 @@
   }
 }
 
-/* Expo web: Paper TextInput paints a dark inner <input>; force login fields white. */
-.gm-login-input,
+/* Expo web: Paper TextInput paints a dark inner <input>/<textarea>; force inverse fields white.
+   Do NOT style the root — that paints over / recolors TextInput.Icon and looks broken. */
 .gm-login-input input,
-.gm-login-input textarea {
+.gm-login-input textarea,
+.gm-input-inverse input,
+.gm-input-inverse textarea {
   background-color: #ffffff !important;
   color: #000000 !important;
 }
 
 .gm-login-input input::placeholder,
-.gm-login-input textarea::placeholder {
+.gm-login-input textarea::placeholder,
+.gm-input-inverse input::placeholder,
+.gm-input-inverse textarea::placeholder {
   color: #111111 !important;
   opacity: 1;
 }

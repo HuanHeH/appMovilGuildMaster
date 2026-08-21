@@ -1,10 +1,13 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, TextInput as RNTextInput, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
+  Checkbox,
+  Chip,
   Divider,
+  Icon,
   Modal,
   Portal,
   RadioButton,
@@ -13,6 +16,11 @@ import {
   TextInput,
 } from 'react-native-paper';
 
+import {
+  DesktopCell,
+  DesktopCellText,
+  DesktopListHeader,
+} from '@/components/DesktopListRow';
 import {
   apiErrorMessage,
   createEvent,
@@ -28,18 +36,90 @@ import {
   screenClass,
   teacherSkillCardClass,
 } from '@/lib/guildmaster-theme';
+import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 import { useGuildStore } from '@/store/guild-store';
 import type { Character, CreateEventRequest, Party, Skill, UserPublic } from '@/types/game';
 import {
   characterOwnerLabel,
+  isDebuffSkill,
   isGrantExpSkill,
   isTeacherExpSkill,
 } from '@/types/game';
 
+/** Match titleSmall row height; Icon outside Paper TextInput (web Affix often invisible). */
+const SEARCH_FIELD_HEIGHT = 28;
+
+function CompactSearchField({
+  value,
+  onChangeText,
+  placeholder = 'Search',
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        minWidth: 112,
+        height: SEARCH_FIELD_HEIGHT,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 8,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: GM.outline,
+        backgroundColor: GM.white,
+      }}>
+      <Icon source="magnify" size={16} color={GM.black} />
+      <RNTextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#444444"
+        style={[
+          {
+            flex: 1,
+            paddingVertical: 0,
+            paddingHorizontal: 0,
+            margin: 0,
+            height: SEARCH_FIELD_HEIGHT - 2,
+            color: GM.black,
+            fontSize: 13,
+            backgroundColor: GM.white,
+          },
+          Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
+        ]}
+      />
+    </View>
+  );
+}
+
 type TargetKind = 'CHARACTER' | 'PARTY' | 'GUILD';
 
+const TEACHER_SKILL_COLS = [
+  { key: 'action', label: 'Launch', flex: 0.95, minWidth: 148 },
+  { key: 'name', label: 'Skill', flex: 1.1 },
+  { key: 'aoe', label: 'Target', flex: 1.4, minWidth: 200 },
+  { key: 'debuff', label: 'Debuff', flex: 0.85, minWidth: 100 },
+  { key: 'desc', label: 'Description', flex: 1.8 },
+];
+
+function buffDebuffIcon(debuff: boolean) {
+  return ({ size }: { size: number }) => (
+    <Icon
+      source={debuff ? 'skull-crossbones' : 'shield-check'}
+      size={size}
+      color={debuff ? '#fecaca' : '#22c55e'}
+    />
+  );
+}
+
 export default function TeacherSkillsScreen() {
+  const isDesktop = useIsDesktop();
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
 
@@ -53,8 +133,8 @@ export default function TeacherSkillsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [targetKind, setTargetKind] = useState<TargetKind>('CHARACTER');
-  const [targetCharacterId, setTargetCharacterId] = useState<number | null>(null);
-  const [targetPartyId, setTargetPartyId] = useState<number | null>(null);
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<number[]>([]);
+  const [selectedPartyIds, setSelectedPartyIds] = useState<number[]>([]);
   const [expAmount, setExpAmount] = useState('10');
   const [characterQuery, setCharacterQuery] = useState('');
   const [partyQuery, setPartyQuery] = useState('');
@@ -122,8 +202,8 @@ export default function TeacherSkillsScreen() {
   const openSkill = async (skill: Skill) => {
     setActiveSkill(skill);
     setTargetKind('CHARACTER');
-    setTargetCharacterId(null);
-    setTargetPartyId(null);
+    setSelectedCharacterIds([]);
+    setSelectedPartyIds([]);
     setExpAmount('10');
     setCharacterQuery('');
     setPartyQuery('');
@@ -138,6 +218,18 @@ export default function TeacherSkillsScreen() {
     }
   };
 
+  const toggleCharacter = (id: number) => {
+    setSelectedCharacterIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleParty = (id: number) => {
+    setSelectedPartyIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const submit = async () => {
     if (!selectedGuildId || !activeSkill) return;
     const amount = Number(expAmount);
@@ -145,32 +237,58 @@ export default function TeacherSkillsScreen() {
       setSnackbar('Enter a positive EXP amount.');
       return;
     }
-    if (targetKind === 'CHARACTER' && !targetCharacterId) {
-      setSnackbar('Select a target character.');
+    if (targetKind === 'CHARACTER' && !selectedCharacterIds.length) {
+      setSnackbar('Select at least one target character.');
       return;
     }
-    if (targetKind === 'PARTY' && !targetPartyId) {
-      setSnackbar('Select a target party.');
+    if (targetKind === 'PARTY' && !selectedPartyIds.length) {
+      setSnackbar('Select at least one target party.');
       return;
     }
 
-    const payload: CreateEventRequest = {
+    const base = {
       skill_id: activeSkill.id,
       guild_id: selectedGuildId,
-      caster_character_id: null,
-      target_character_id: targetKind === 'CHARACTER' ? targetCharacterId : null,
-      target_party_id: targetKind === 'PARTY' ? targetPartyId : null,
+      caster_character_id: null as number | null,
       comment: String(amount),
     };
 
+    const payloads: CreateEventRequest[] =
+      targetKind === 'GUILD'
+        ? [
+            {
+              ...base,
+              target_character_id: null,
+              target_party_id: null,
+            },
+          ]
+        : targetKind === 'CHARACTER'
+          ? selectedCharacterIds.map((id) => ({
+              ...base,
+              target_character_id: id,
+              target_party_id: null,
+            }))
+          : selectedPartyIds.map((id) => ({
+              ...base,
+              target_character_id: null,
+              target_party_id: id,
+            }));
+
     try {
       setSubmitting(true);
-      await createEvent(payload);
+      for (const payload of payloads) {
+        await createEvent(payload);
+      }
       await reloadGuildData();
       setModalVisible(false);
       setActiveSkill(null);
       const verb = isGrantExpSkill(activeSkill) ? 'Granted' : 'Removed';
-      setSnackbar(`${verb} ${amount} EXP (auto-approved).`);
+      const n = payloads.length;
+      setSnackbar(
+        targetKind === 'GUILD'
+          ? `${verb} ${amount} EXP to guild (auto-approved).`
+          : `${verb} ${amount} EXP to ${n} target${n === 1 ? '' : 's'} (auto-approved).`
+      );
     } catch (error) {
       setSnackbar(apiErrorMessage(error, 'Could not apply EXP skill.'));
     } finally {
@@ -199,17 +317,152 @@ export default function TeacherSkillsScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 10 }}>
         {!teacherSkills.length ? (
           <Text>No Teacher EXP skills found. Run the SQL seed first.</Text>
+        ) : isDesktop ? (
+          <View style={{ gap: 6 }}>
+            <DesktopListHeader columns={TEACHER_SKILL_COLS} />
+            {teacherSkills.map((skill) => (
+              <View
+                key={skill.id}
+                className={`${teacherSkillCardClass} gm-skill-card--auto`}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                }}>
+                <DesktopCell flex={0.95} minWidth={148}>
+                  <Button
+                    mode="contained"
+                    icon="lightning-bolt"
+                    buttonColor={GM.primaryContainer}
+                    textColor={GM.onPrimary}
+                    onPress={() => openSkill(skill)}
+                    contentStyle={{ height: 42, paddingHorizontal: 6 }}
+                    labelStyle={{ fontWeight: '800', fontSize: 13, letterSpacing: 0.2 }}
+                    style={{
+                      alignSelf: 'flex-start',
+                      minWidth: 132,
+                      borderRadius: 8,
+                      elevation: 3,
+                    }}>
+                    Launch
+                  </Button>
+                </DesktopCell>
+                <DesktopCell flex={1.2}>
+                  <DesktopCellText
+                    primary={skill.name}
+                    secondary="Teacher · Auto"
+                    primaryStyle={{ color: GM.primary }}
+                  />
+                </DesktopCell>
+                <DesktopCell flex={1.4} minWidth={200}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                    <Chip compact icon="account">
+                      SINGLE
+                    </Chip>
+                    <Chip compact icon="account-group">
+                      PARTY
+                    </Chip>
+                    <Chip compact icon="domain">
+                      GUILD
+                    </Chip>
+                  </View>
+                </DesktopCell>
+                <DesktopCell flex={0.85} minWidth={100}>
+                  <Chip
+                    compact
+                    icon={buffDebuffIcon(isDebuffSkill(skill))}
+                    style={{
+                      alignSelf: 'flex-start',
+                      backgroundColor: isDebuffSkill(skill) ? '#7f1d1d' : '#14532d',
+                      borderWidth: 1,
+                      borderColor: isDebuffSkill(skill) ? '#ef4444' : '#22c55e',
+                    }}
+                    textStyle={{
+                      color: isDebuffSkill(skill) ? '#fecaca' : '#bbf7d0',
+                      fontWeight: '700',
+                    }}>
+                    {isDebuffSkill(skill) ? 'Debuff' : 'Buff'}
+                  </Chip>
+                </DesktopCell>
+                <DesktopCell flex={2}>
+                  <DesktopCellText
+                    primary={skill.description}
+                    primaryStyle={{
+                      color: GM.onSurfaceVariant,
+                      fontWeight: '500',
+                      fontSize: 13,
+                    }}
+                    numberOfLines={3}
+                  />
+                </DesktopCell>
+              </View>
+            ))}
+          </View>
         ) : (
           teacherSkills.map((skill) => (
             <View key={skill.id} className={`${teacherSkillCardClass} gm-skill-card--auto`}>
-              <Text variant="titleSmall" style={{ color: GM.primary, fontWeight: '700' }}>
-                {skill.name}
-              </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                }}>
+                <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                  <Text
+                    variant="titleMedium"
+                    numberOfLines={2}
+                    style={{ color: GM.primary, fontWeight: '800', fontSize: 17 }}>
+                    {skill.name}
+                  </Text>
+                  <Text style={{ color: GM.onSurfaceMuted, fontSize: 12, fontWeight: '600' }}>
+                    Teacher · Auto
+                  </Text>
+                </View>
+                <Button
+                  compact
+                  mode="contained"
+                  icon="lightning-bolt"
+                  buttonColor={GM.primaryContainer}
+                  textColor={GM.onPrimary}
+                  onPress={() => openSkill(skill)}
+                  contentStyle={{ height: 36, paddingHorizontal: 6 }}
+                  labelStyle={{ fontWeight: '800', fontSize: 12, letterSpacing: 0.2 }}
+                  style={{
+                    borderRadius: 8,
+                    elevation: 3,
+                  }}>
+                  Launch
+                </Button>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                <Chip compact icon="account">
+                  SINGLE
+                </Chip>
+                <Chip compact icon="account-group">
+                  PARTY
+                </Chip>
+                <Chip compact icon="domain">
+                  GUILD
+                </Chip>
+                <Chip
+                  compact
+                  icon={buffDebuffIcon(isDebuffSkill(skill))}
+                  style={{
+                    backgroundColor: isDebuffSkill(skill) ? '#7f1d1d' : '#14532d',
+                    borderWidth: 1,
+                    borderColor: isDebuffSkill(skill) ? '#ef4444' : '#22c55e',
+                  }}
+                  textStyle={{
+                    color: isDebuffSkill(skill) ? '#fecaca' : '#bbf7d0',
+                    fontWeight: '700',
+                  }}>
+                  {isDebuffSkill(skill) ? 'Debuff' : 'Buff'}
+                </Chip>
+              </View>
               <Text style={{ color: GM.onSurfaceMuted }}>Target: character / party / guild</Text>
               <Text style={{ color: GM.onSurfaceVariant }}>{skill.description}</Text>
-              <Button mode="contained" buttonColor={GM.primary} onPress={() => openSkill(skill)}>
-                Use skill
-              </Button>
             </View>
           ))
         )}
@@ -249,8 +502,8 @@ export default function TeacherSkillsScreen() {
               value={targetKind}
               onValueChange={(value) => {
                 setTargetKind(value as TargetKind);
-                setTargetCharacterId(null);
-                setTargetPartyId(null);
+                setSelectedCharacterIds([]);
+                setSelectedPartyIds([]);
                 setCharacterQuery('');
                 setPartyQuery('');
               }}>
@@ -265,40 +518,59 @@ export default function TeacherSkillsScreen() {
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
                     gap: 8,
                   }}>
-                  <Text variant="titleSmall" style={{ flexShrink: 0 }}>
-                    Target character
+                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: SEARCH_FIELD_HEIGHT }}>
+                    Target characters
+                    {selectedCharacterIds.length
+                      ? ` (${selectedCharacterIds.length})`
+                      : ''}
                   </Text>
-                  <TextInput
-                    mode="outlined"
-                    dense
-                    placeholder="Search"
-                    placeholderTextColor={GM.black}
+                  <CompactSearchField
                     value={characterQuery}
                     onChangeText={setCharacterQuery}
-                    textColor={GM.black}
-                    left={<TextInput.Icon icon="magnify" color={GM.black} />}
-                    className="gm-input-inverse"
-                    style={{ flex: 1, height: 40 }}
                   />
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    marginTop: 8,
+                  }}>
+                  <Button
+                    compact
+                    mode="outlined"
+                    onPress={() =>
+                      setSelectedCharacterIds(filteredCharacters.map((c) => c.id))
+                    }
+                    disabled={!filteredCharacters.length}>
+                    Select all
+                  </Button>
+                  <Button
+                    compact
+                    mode="text"
+                    onPress={() => setSelectedCharacterIds([])}
+                    disabled={!selectedCharacterIds.length}>
+                    Clear
+                  </Button>
                 </View>
                 <ScrollView
                   style={{ maxHeight: 240, marginTop: 4 }}
                   nestedScrollEnabled
                   keyboardShouldPersistTaps="handled">
-                  <RadioButton.Group
-                    value={targetCharacterId ? String(targetCharacterId) : ''}
-                    onValueChange={(value) => setTargetCharacterId(Number(value))}>
-                    {filteredCharacters.map((character) => (
-                      <RadioButton.Item
+                  {filteredCharacters.map((character) => {
+                    const checked = selectedCharacterIds.includes(character.id);
+                    return (
+                      <Checkbox.Item
                         key={character.id}
                         label={`${characterOwnerLabel(character, userById)} · EXP ${character.exp}`}
-                        value={String(character.id)}
+                        status={checked ? 'checked' : 'unchecked'}
+                        onPress={() => toggleCharacter(character.id)}
+                        position="leading"
                       />
-                    ))}
-                  </RadioButton.Group>
+                    );
+                  })}
                   {!filteredCharacters.length ? (
                     <Text style={{ marginVertical: 8, color: GM.tertiary }}>No characters match.</Text>
                   ) : null}
@@ -312,36 +584,52 @@ export default function TeacherSkillsScreen() {
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
                     gap: 8,
                   }}>
-                  <Text variant="titleSmall" style={{ flexShrink: 0 }}>
-                    Target party
+                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: SEARCH_FIELD_HEIGHT }}>
+                    Target parties
+                    {selectedPartyIds.length ? ` (${selectedPartyIds.length})` : ''}
                   </Text>
-                  <TextInput
+                  <CompactSearchField value={partyQuery} onChangeText={setPartyQuery} />
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    marginTop: 8,
+                  }}>
+                  <Button
+                    compact
                     mode="outlined"
-                    dense
-                    placeholder="Search"
-                    placeholderTextColor={GM.black}
-                    value={partyQuery}
-                    onChangeText={setPartyQuery}
-                    textColor={GM.black}
-                    left={<TextInput.Icon icon="magnify" color={GM.black} />}
-                    className="gm-input-inverse"
-                    style={{ flex: 1, height: 40 }}
-                  />
+                    onPress={() => setSelectedPartyIds(filteredParties.map((p) => p.id))}
+                    disabled={!filteredParties.length}>
+                    Select all
+                  </Button>
+                  <Button
+                    compact
+                    mode="text"
+                    onPress={() => setSelectedPartyIds([])}
+                    disabled={!selectedPartyIds.length}>
+                    Clear
+                  </Button>
                 </View>
                 <ScrollView
                   style={{ maxHeight: 240, marginTop: 4 }}
                   nestedScrollEnabled
                   keyboardShouldPersistTaps="handled">
-                  <RadioButton.Group
-                    value={targetPartyId ? String(targetPartyId) : ''}
-                    onValueChange={(value) => setTargetPartyId(Number(value))}>
-                    {filteredParties.map((party) => (
-                      <RadioButton.Item key={party.id} label={party.name} value={String(party.id)} />
-                    ))}
-                  </RadioButton.Group>
+                  {filteredParties.map((party) => {
+                    const checked = selectedPartyIds.includes(party.id);
+                    return (
+                      <Checkbox.Item
+                        key={party.id}
+                        label={party.name}
+                        status={checked ? 'checked' : 'unchecked'}
+                        onPress={() => toggleParty(party.id)}
+                        position="leading"
+                      />
+                    );
+                  })}
                   {!filteredParties.length ? (
                     <Text style={{ marginVertical: 8, color: GM.tertiary }}>No parties match.</Text>
                   ) : null}
