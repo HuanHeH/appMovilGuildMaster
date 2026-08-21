@@ -3,12 +3,28 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
-import { centerScreenClass, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
+import {
+  DesktopCell,
+  DesktopCellText,
+  DesktopListHeader,
+  DesktopListRow,
+} from '@/components/DesktopListRow';
+import { centerScreenClass, GM, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
+import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
-import { guildLabel } from '@/types/game';
+import { guildClassLabel, guildLabel } from '@/types/game';
+
+const GUILD_COLS = [
+  { key: 'name', label: 'Guild', flex: 1.4 },
+  { key: 'class', label: 'Class', flex: 1.2 },
+  { key: 'level', label: 'Level', flex: 0.9 },
+  { key: 'modality', label: 'Modality', flex: 1 },
+  { key: 'group', label: 'Group', flex: 0.7, minWidth: 72 },
+];
 
 export default function TeacherGuildsScreen() {
+  const isDesktop = useIsDesktop();
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
@@ -57,10 +73,17 @@ export default function TeacherGuildsScreen() {
     <View className={screenClass}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Card mode="outlined">
-          <Card.Content style={{ gap: 4 }}>
-            <Text variant="titleMedium">User</Text>
+          <Card.Content
+            style={
+              isDesktop
+                ? { flexDirection: 'row', alignItems: 'center', gap: 24, flexWrap: 'wrap' }
+                : { gap: 4 }
+            }>
+            <Text variant="titleMedium" style={{ color: GM.primary, fontWeight: '700' }}>
+              User
+            </Text>
             <Text>{session?.name}</Text>
-            <Text>{session?.mail}</Text>
+            <Text style={{ color: GM.tertiary }}>{session?.mail}</Text>
           </Card.Content>
         </Card>
 
@@ -71,6 +94,39 @@ export default function TeacherGuildsScreen() {
 
             {!guilds.length ? (
               <Text>No mentorship guilds found.</Text>
+            ) : isDesktop ? (
+              <View style={{ gap: 6, marginTop: 4 }}>
+                <DesktopListHeader columns={GUILD_COLS} />
+                {guilds.map((guild) => {
+                  const selected = guild.id === selectedGuildId;
+                  return (
+                    <DesktopListRow
+                      key={guild.id}
+                      selected={selected}
+                      onPress={() => setSelectedGuildId(guild.id)}>
+                      <DesktopCell flex={1.4}>
+                        <DesktopCellText
+                          primary={guild.name}
+                          secondary={selected ? 'Selected' : null}
+                          secondaryStyle={selected ? { color: GM.primary } : undefined}
+                        />
+                      </DesktopCell>
+                      <DesktopCell flex={1.2}>
+                        <DesktopCellText primary={guildClassLabel(guild)} />
+                      </DesktopCell>
+                      <DesktopCell flex={0.9}>
+                        <DesktopCellText primary={guild.level ?? '—'} />
+                      </DesktopCell>
+                      <DesktopCell flex={1}>
+                        <DesktopCellText primary={guild.modality ?? '—'} />
+                      </DesktopCell>
+                      <DesktopCell flex={0.7} minWidth={72}>
+                        <DesktopCellText primary={`${guild.number}${guild.letter}`} />
+                      </DesktopCell>
+                    </DesktopListRow>
+                  );
+                })}
+              </View>
             ) : (
               guilds.map((guild) => {
                 const selected = guild.id === selectedGuildId;

@@ -16,6 +16,11 @@ import {
 } from 'react-native-paper';
 
 import { EventCommentChip } from '@/components/EventCommentChip';
+import {
+  DesktopCell,
+  DesktopCellText,
+  DesktopListHeader,
+} from '@/components/DesktopListRow';
 import { showConfirm } from '@/lib/alert';
 import { eventMatchesSearch } from '@/lib/event-search';
 import {
@@ -40,6 +45,7 @@ import {
   getUsers,
   updateEvent,
 } from '@/lib/api';
+import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 import { useGuildStore } from '@/store/guild-store';
 import type { Character, EventStatus, GameEvent, Guild, Party, Skill, UserPublic } from '@/types/game';
@@ -52,6 +58,16 @@ import {
   isTeacherExpSkill,
   levelUpTargetLevel,
 } from '@/types/game';
+
+const EVENT_COLS = [
+  { key: 'id', label: 'ID', flex: 0.75, minWidth: 88 },
+  { key: 'guild', label: 'Guild', flex: 1.1 },
+  { key: 'skill', label: 'Skill', flex: 1.5 },
+  { key: 'from', label: 'From', flex: 1.25 },
+  { key: 'target', label: 'Target', flex: 1.25 },
+  { key: 'status', label: 'Status', flex: 0.7, minWidth: 88 },
+  { key: 'actions', label: 'Actions', flex: 1.2 },
+];
 
 type EventKindFilter = 'LAUNCHED' | 'REVIEWED';
 type DateSort = 'desc' | 'asc';
@@ -161,6 +177,7 @@ function eventTime(iso: string): number {
 }
 
 export default function TeacherEventsScreen() {
+  const isDesktop = useIsDesktop();
   const session = useAuthStore((state) => state.session);
   const selectedGuildId = useGuildStore((state) => state.selectedGuildId);
 
@@ -408,7 +425,7 @@ export default function TeacherEventsScreen() {
     let targetShort = '';
     let targetDisplay = '';
     let targetOwner: string | null = null;
-    const eventGuildClass = guildClassLabel(guild);
+    const eventGuildClass = guildClassLabel(guild ?? undefined);
     if (event.target_character_id !== null) {
       targetKind = 'character';
       const parts = characterOwnerParts(targetCharacter ?? undefined, userById);
@@ -463,6 +480,140 @@ export default function TeacherEventsScreen() {
         : null;
     const reviewChip = reviewMeta ? eventReviewChipColors(event.status) : null;
 
+    const skillTitle =
+      skill?.name ??
+      (isTeacherExpEvent(event, skill)
+        ? parseExpDeltaComment(event.comment)?.startsWith('-')
+          ? 'Remove EXP'
+          : 'Grant EXP'
+        : 'Unknown skill');
+    const fromLabel = caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher');
+    const skillSecondary = expSummary ?? progression ?? null;
+    const canReview = !hideReviewAction && event.status === 'PENDING';
+    const canRevert =
+      !hideReviewAction &&
+      (event.status === 'APPROVED' || event.status === 'REJECTED') &&
+      !isTeacherExp &&
+      !isAutoProgression;
+
+    if (isDesktop) {
+      return (
+        <Card key={event.id} mode="outlined" className={cardClass}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+            }}>
+            <DesktopCell flex={0.75} minWidth={88}>
+              <DesktopCellText primary={`#${event.id}`} secondary={formatEventDate(event.created_at)} />
+            </DesktopCell>
+            <DesktopCell flex={1.1}>
+              <DesktopCellText primary={eventGuildClass || '—'} />
+            </DesktopCell>
+            <DesktopCell flex={1.5}>
+              <DesktopCellText primary={skillTitle} secondary={skillSecondary} />
+              {hasDisplayComment ? (
+                <View style={{ marginTop: 4 }}>
+                  <EventCommentChip
+                    label={commentVisible ? (event.comment ?? '') : 'View comment'}
+                    muted={!commentVisible}
+                    onPress={() => toggleCommentVisible(event.id)}
+                  />
+                </View>
+              ) : null}
+            </DesktopCell>
+            <DesktopCell flex={1.25}>
+              {!hideFromRow ? (
+                <DesktopCellText
+                  primary={fromLabel}
+                  primaryStyle={highlightNameStyle(launchedByMe)}
+                />
+              ) : (
+                <DesktopCellText primary="—" />
+              )}
+            </DesktopCell>
+            <DesktopCell flex={1.25}>
+              {targetKind ? (
+                <DesktopCellText
+                  primary={targetDisplay}
+                  secondary={targetPrefix}
+                  primaryStyle={highlightNameStyle(targetHighlight)}
+                />
+              ) : (
+                <DesktopCellText primary="—" />
+              )}
+            </DesktopCell>
+            <DesktopCell flex={0.7} minWidth={88}>
+              <View
+                className={badge.wrap}
+                style={{ position: 'relative', top: 0, right: 0, alignSelf: 'flex-start' }}>
+                <Text className={badge.text}>{badge.label}</Text>
+              </View>
+              {reviewMeta && reviewChip ? (
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    marginTop: 4,
+                    fontSize: 11,
+                    fontWeight: '600',
+                    color: reviewChip.text,
+                  }}>
+                  {reviewMeta}
+                </Text>
+              ) : null}
+            </DesktopCell>
+            <DesktopCell flex={1.2}>
+              {canReview ? (
+                <Chip
+                  mode="outlined"
+                  icon="clipboard-check-outline"
+                  onPress={() => openReviewModal(event)}
+                  style={{
+                    alignSelf: 'flex-start',
+                    backgroundColor: '#422006',
+                    borderWidth: 1,
+                    borderColor: '#eab308',
+                  }}
+                  textStyle={{
+                    fontSize: 12,
+                    fontWeight: '700',
+                    color: '#fde68a',
+                    flexShrink: 1,
+                  }}>
+                  Review
+                </Chip>
+              ) : canRevert ? (
+                <Chip
+                  mode="outlined"
+                  icon="undo"
+                  disabled={reviewSubmitting}
+                  onPress={() => revertToPending(event)}
+                  style={{
+                    alignSelf: 'flex-start',
+                    backgroundColor: '#1e3a5f',
+                    borderWidth: 1,
+                    borderColor: '#60a5fa',
+                  }}
+                  textStyle={{
+                    fontSize: 12,
+                    fontWeight: '700',
+                    color: '#bfdbfe',
+                    flexShrink: 1,
+                  }}>
+                  To pending
+                </Chip>
+              ) : (
+                <Text style={{ color: GM.tertiary }}>—</Text>
+              )}
+            </DesktopCell>
+          </View>
+        </Card>
+      );
+    }
+
     return (
       <Card
         key={event.id}
@@ -486,12 +637,7 @@ export default function TeacherEventsScreen() {
             </Text>
 
             <Text style={{ fontWeight: '700' }} numberOfLines={2}>
-              {skill?.name ??
-                (isTeacherExpEvent(event, skill)
-                  ? parseExpDeltaComment(event.comment)?.startsWith('-')
-                    ? 'Remove EXP'
-                    : 'Grant EXP'
-                  : 'Unknown skill')}
+              {skillTitle}
             </Text>
 
             {!hideFromRow ? (
@@ -499,7 +645,7 @@ export default function TeacherEventsScreen() {
                 <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                   From:{' '}
                   <Text style={highlightNameStyle(launchedByMe)}>
-                    {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
+                    {fromLabel}
                   </Text>
                 </Text>
                 {targetKind ? (
@@ -581,7 +727,7 @@ export default function TeacherEventsScreen() {
               />
             ) : null}
 
-            {!hideReviewAction && event.status === 'PENDING' ? (
+            {canReview ? (
               <Chip
                 mode="outlined"
                 icon="clipboard-check-outline"
@@ -603,10 +749,7 @@ export default function TeacherEventsScreen() {
               </Chip>
             ) : null}
 
-            {!hideReviewAction &&
-            (event.status === 'APPROVED' || event.status === 'REJECTED') &&
-            !isTeacherExp &&
-            !isAutoProgression ? (
+            {canRevert ? (
               <Chip
                 mode="outlined"
                 icon="undo"
@@ -762,7 +905,11 @@ export default function TeacherEventsScreen() {
           </Card.Content>
         </Card>
 
-        {filteredEvents.map(renderEventCard)}
+        {isDesktop && filteredEvents.length ? (
+          <DesktopListHeader columns={EVENT_COLS} />
+        ) : null}
+
+        {filteredEvents.map((event) => renderEventCard(event))}
         {!filteredEvents.length ? <Text>No events.</Text> : null}
       </ScrollView>
 
