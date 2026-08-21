@@ -259,11 +259,67 @@
   }
 
   .gm-input-inverse {
-    @apply bg-[#e5e2e1];
+    @apply bg-white;
+  }
+
+  .gm-login-input {
+    @apply bg-white;
   }
 
   .gm-filters-header {
     @apply flex-row items-center gap-2.5 px-3 py-3;
   }
+
+  /* Desktop Notion-like sidebar */
+  .gm-sidebar {
+    @apply h-full w-[240px] border-r border-gm-outline bg-gm-surface-container px-2;
+    min-height: 100%;
+  }
+
+  .gm-sidebar-brand {
+    @apply mb-3 flex-row items-center gap-2 px-2 py-2;
+  }
+
+  .gm-sidebar-nav {
+    @apply flex-1 gap-0.5;
+  }
+
+  .gm-sidebar-item {
+    @apply flex-row items-center gap-2.5 rounded-md px-2.5 py-2;
+  }
+
+  .gm-sidebar-item--active {
+    @apply bg-gm-surface-elevated;
+  }
+
+  .gm-sidebar-context {
+    @apply mt-3 border-t border-gm-outline px-2 pt-3;
+  }
+
+  .gm-sidebar-context-chip {
+    @apply flex-row items-start gap-2 rounded-md border border-gm-outline bg-gm-black px-2.5 py-2;
+  }
+
+  .gm-sidebar-footer {
+    @apply mt-auto border-t border-gm-outline pt-2;
+  }
+
+  .gm-sidebar-user {
+    @apply flex-row items-center gap-2 px-1;
+  }
+}
+
+/* Expo web: Paper TextInput paints a dark inner <input>; force login fields white. */
+.gm-login-input,
+.gm-login-input input,
+.gm-login-input textarea {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.gm-login-input input::placeholder,
+.gm-login-input textarea::placeholder {
+  color: #111111 !important;
+  opacity: 1;
 }
 

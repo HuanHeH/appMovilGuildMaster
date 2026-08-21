@@ -25,6 +25,7 @@ import {
   eventStatusCardClass,
   filtersCardClass,
   GM,
+  highlightNameStyle,
   modalContentStyle,
   mutedLabelClass,
   screenClass,
@@ -447,6 +448,14 @@ export default function TeacherEventsScreen() {
     const hasDisplayComment =
       Boolean(event.comment) && !isExpDeltaComment(event.comment) && !isAutoProgression;
     const hideFromRow = isTeacherExp || isAutoProgression;
+    const launchedByMe =
+      Boolean(session?.id) &&
+      ((event.caster_character_id == null && event.reviewed_by_user_id === session?.id) ||
+        (caster != null && caster.user_id === session?.id));
+    const targetHighlight =
+      Boolean(session?.id) &&
+      targetKind === 'character' &&
+      targetCharacter?.user_id === session?.id;
     const badge = eventStatusBadgeClass(event.status);
     const reviewMeta =
       (event.status === 'APPROVED' || event.status === 'REJECTED') && event.reviewed_at
@@ -489,14 +498,14 @@ export default function TeacherEventsScreen() {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
                 <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                   From:{' '}
-                  <Text style={{ fontWeight: '600' }}>
+                  <Text style={highlightNameStyle(launchedByMe)}>
                     {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
                   </Text>
                 </Text>
                 {targetKind ? (
                   <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                     · {targetPrefix}:{' '}
-                    <Text style={{ fontWeight: '600' }}>{targetDisplay}</Text>
+                    <Text style={highlightNameStyle(targetHighlight)}>{targetDisplay}</Text>
                   </Text>
                 ) : null}
               </View>
@@ -514,11 +523,20 @@ export default function TeacherEventsScreen() {
                 <Chip
                   icon="lightning-bolt"
                   style={{ alignSelf: 'flex-start' }}
-                  textStyle={{ flexShrink: 1 }}>
+                  textStyle={{
+                    flexShrink: 1,
+                    ...(highlightNameStyle(launchedByMe || targetHighlight) ?? {}),
+                  }}>
                   {expSummary}
                 </Chip>
                 {targetOwner ? (
-                  <Chip compact style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
+                  <Chip
+                    compact
+                    style={{ alignSelf: 'flex-start' }}
+                    textStyle={{
+                      flexShrink: 1,
+                      ...(highlightNameStyle(targetHighlight) ?? {}),
+                    }}>
                     {targetOwner}
                   </Chip>
                 ) : null}
@@ -527,7 +545,10 @@ export default function TeacherEventsScreen() {
               <Chip
                 icon="information-outline"
                 style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                textStyle={{ flexShrink: 1 }}>
+                textStyle={{
+                  flexShrink: 1,
+                  ...(highlightNameStyle(launchedByMe || targetHighlight) ?? {}),
+                }}>
                 {progression}
               </Chip>
             ) : null}

@@ -90,6 +90,14 @@ export const accordionClass = 'gm-accordion';
 export const modalContentClass = 'gm-modal-content';
 export const teacherSkillCardClass = 'gm-teacher-skill-card';
 export const highlightTextClass = 'gm-text-highlight';
+
+/** Paper Text on web ignores NativeWind className; use this for caster/target names. */
+export function highlightNameStyle(active: boolean) {
+  return active ? { color: GM.primary, fontWeight: '700' as const } : undefined;
+}
+
+/** Desktop Notion-like sidebar width (must match AppSidebar + tabBarStyle). */
+export const DESKTOP_SIDEBAR_WIDTH = 240;
 export const mutedLabelClass = 'gm-text-muted';
 export const commentChipClass = 'gm-comment-chip';
 export const commentChipTextClass = 'gm-comment-chip-text';

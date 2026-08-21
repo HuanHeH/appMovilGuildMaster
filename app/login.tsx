@@ -80,8 +80,20 @@ export default function LoginScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
           onChangeText={setMail}
-          className="gm-input-inverse"
+          className="gm-login-input"
           textColor={GM.black}
+          outlineColor={GM.outline}
+          activeOutlineColor={GM.primary}
+          style={{ backgroundColor: GM.white }}
+          contentStyle={{ backgroundColor: GM.white }}
+          theme={{
+            colors: {
+              surface: GM.white,
+              onSurface: GM.black,
+              onSurfaceVariant: GM.black,
+              background: GM.white,
+            },
+          }}
         />
         <TextInput
           mode="outlined"
@@ -90,8 +102,20 @@ export default function LoginScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
-          className="gm-input-inverse"
+          className="gm-login-input"
           textColor={GM.black}
+          outlineColor={GM.outline}
+          activeOutlineColor={GM.primary}
+          style={{ backgroundColor: GM.white }}
+          contentStyle={{ backgroundColor: GM.white }}
+          theme={{
+            colors: {
+              surface: GM.white,
+              onSurface: GM.black,
+              onSurfaceVariant: GM.black,
+              background: GM.white,
+            },
+          }}
         />
         <HelperText type="error" visible={!!error}>
           {error ?? ''}

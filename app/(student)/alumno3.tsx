@@ -13,7 +13,7 @@ import {
   eventStatusCardClass,
   filtersCardClass,
   GM,
-  highlightTextClass,
+  highlightNameStyle,
   mutedLabelClass,
   screenClass,
   screenPadClass,
@@ -483,16 +483,14 @@ export default function EventsScreen() {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 }}>
                 <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                   From:{' '}
-                  <Text
-                    className={launchedBySelected ? highlightTextClass : undefined}>
+                  <Text style={highlightNameStyle(launchedBySelected)}>
                     {caster ? characterOwnerLabel(caster, userById) : (reviewer ?? 'Teacher')}
                   </Text>
                 </Text>
                 {targetKind ? (
                   <Text variant="bodySmall" style={{ flexShrink: 1 }}>
                     · {targetPrefix}:{' '}
-                    <Text
-                      className={targetHighlight ? highlightTextClass : undefined}>
+                    <Text style={highlightNameStyle(targetHighlight)}>
                       {targetDisplay}
                     </Text>
                   </Text>
@@ -512,11 +510,20 @@ export default function EventsScreen() {
                 <Chip
                   icon="lightning-bolt"
                   style={{ alignSelf: 'flex-start' }}
-                  textStyle={{ flexShrink: 1 }}>
+                  textStyle={{
+                    flexShrink: 1,
+                    ...(highlightNameStyle(targetHighlight) ?? {}),
+                  }}>
                   {expSummary}
                 </Chip>
                 {targetOwner ? (
-                  <Chip compact style={{ alignSelf: 'flex-start' }} textStyle={{ flexShrink: 1 }}>
+                  <Chip
+                    compact
+                    style={{ alignSelf: 'flex-start' }}
+                    textStyle={{
+                      flexShrink: 1,
+                      ...(highlightNameStyle(targetHighlight) ?? {}),
+                    }}>
                     {targetOwner}
                   </Chip>
                 ) : null}
@@ -525,7 +532,10 @@ export default function EventsScreen() {
               <Chip
                 icon="information-outline"
                 style={{ alignSelf: 'flex-start', marginTop: 2 }}
-                textStyle={{ flexShrink: 1 }}>
+                textStyle={{
+                  flexShrink: 1,
+                  ...(highlightNameStyle(launchedBySelected || targetHighlight) ?? {}),
+                }}>
                 {progression}
               </Chip>
             ) : null}

@@ -1,13 +1,17 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Icon, IconButton } from 'react-native-paper';
 
+import { AppSidebar } from '@/components/AppSidebar';
 import { logout } from '@/lib/api';
-import { tabScreenOptions } from '@/lib/guildmaster-theme';
+import { GM, tabScreenOptions } from '@/lib/guildmaster-theme';
+import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function AdminTabsLayout() {
   const router = useRouter();
-  const role = useAuthStore((state) => state.session?.role);
+  const isDesktop = useIsDesktop();
+  const session = useAuthStore((state) => state.session);
+  const role = session?.role;
   const clearSession = useAuthStore((state) => state.clearSession);
 
   const onLogout = async () => {
@@ -26,20 +30,41 @@ export default function AdminTabsLayout() {
 
   return (
     <Tabs
+      tabBar={
+        isDesktop
+          ? (props) => (
+              <AppSidebar
+                {...props}
+                brandTitle="Admin GuildMaster"
+                userName={session?.name}
+                onLogout={onLogout}
+              />
+            )
+          : undefined
+      }
       screenOptions={{
         ...tabScreenOptions,
-        headerShown: true,
+        headerShown: !isDesktop,
+        tabBarPosition: isDesktop ? 'left' : 'bottom',
+        tabBarStyle: isDesktop
+          ? {
+              backgroundColor: GM.surfaceContainer,
+              borderTopWidth: 0,
+              borderRightWidth: 0,
+              elevation: 0,
+              width: 240,
+            }
+          : tabScreenOptions.tabBarStyle,
         headerRight: () => (
           <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
         ),
-      }}
-    >
+      }}>
       <Tabs.Screen
         name="admin1"
         options={{
           title: 'Admin1',
           tabBarIcon: ({ color, size }) => (
-            <Icon source="home" color={color} size={size} />
+            <Icon source="home" color={String(color)} size={size} />
           ),
         }}
       />
@@ -48,7 +73,7 @@ export default function AdminTabsLayout() {
         options={{
           title: 'Admin2',
           tabBarIcon: ({ color, size }) => (
-            <Icon source="account-group" color={color} size={size} />
+            <Icon source="account-group" color={String(color)} size={size} />
           ),
         }}
       />
@@ -57,7 +82,7 @@ export default function AdminTabsLayout() {
         options={{
           title: 'Admin3',
           tabBarIcon: ({ color, size }) => (
-            <Icon source="calendar" color={color} size={size} />
+            <Icon source="calendar" color={String(color)} size={size} />
           ),
         }}
       />
