@@ -1,6 +1,6 @@
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Platform, ScrollView, TextInput as RNTextInput, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
@@ -21,6 +21,10 @@ import {
   DesktopCellText,
   DesktopListHeader,
 } from '@/components/DesktopListRow';
+import {
+  CompactSearchField,
+  COMPACT_SEARCH_FIELD_HEIGHT,
+} from '@/components/CompactSearchField';
 import {
   apiErrorMessage,
   createEvent,
@@ -46,57 +50,6 @@ import {
   isGrantExpSkill,
   isTeacherExpSkill,
 } from '@/types/game';
-
-/** Match titleSmall row height; Icon outside Paper TextInput (web Affix often invisible). */
-const SEARCH_FIELD_HEIGHT = 28;
-
-function CompactSearchField({
-  value,
-  onChangeText,
-  placeholder = 'Search',
-}: {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <View
-      style={{
-        flex: 1,
-        minWidth: 112,
-        height: SEARCH_FIELD_HEIGHT,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 8,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: GM.outline,
-        backgroundColor: GM.white,
-      }}>
-      <Icon source="magnify" size={16} color={GM.black} />
-      <RNTextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#444444"
-        style={[
-          {
-            flex: 1,
-            paddingVertical: 0,
-            paddingHorizontal: 0,
-            margin: 0,
-            height: SEARCH_FIELD_HEIGHT - 2,
-            color: GM.black,
-            fontSize: 13,
-            backgroundColor: GM.white,
-          },
-          Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null,
-        ]}
-      />
-    </View>
-  );
-}
 
 type TargetKind = 'CHARACTER' | 'PARTY' | 'GUILD';
 
@@ -520,7 +473,7 @@ export default function TeacherSkillsScreen() {
                     alignItems: 'center',
                     gap: 8,
                   }}>
-                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: SEARCH_FIELD_HEIGHT }}>
+                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: COMPACT_SEARCH_FIELD_HEIGHT }}>
                     Target characters
                     {selectedCharacterIds.length
                       ? ` (${selectedCharacterIds.length})`
@@ -586,7 +539,7 @@ export default function TeacherSkillsScreen() {
                     alignItems: 'center',
                     gap: 8,
                   }}>
-                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: SEARCH_FIELD_HEIGHT }}>
+                  <Text variant="titleSmall" style={{ flexShrink: 0, lineHeight: COMPACT_SEARCH_FIELD_HEIGHT }}>
                     Target parties
                     {selectedPartyIds.length ? ` (${selectedPartyIds.length})` : ''}
                   </Text>

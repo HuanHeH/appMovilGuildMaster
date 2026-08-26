@@ -76,7 +76,7 @@ export default function ProfileScreen() {
 
   return (
     <View className={screenClass}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} style={{ flex: 1 }}>
         <Card mode="outlined">
           <Card.Content
             style={

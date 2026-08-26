@@ -22,17 +22,25 @@ export default function Root({ children }: { children: React.ReactNode }) {
 }
 
 const responsiveBackground = `
-html, body {
+html, body, #root {
   height: 100%;
+  max-height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 body {
-  background-color: #fff;
-  min-height: 100vh;
+  background-color: #000;
+  overscroll-behavior: none;
 }
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
-}`;
+#root {
+  display: flex;
+  flex-direction: column;
+}
+#root > div {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+`;

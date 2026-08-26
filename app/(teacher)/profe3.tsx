@@ -16,6 +16,7 @@ import {
 } from 'react-native-paper';
 
 import { EventCommentChip } from '@/components/EventCommentChip';
+import { CompactSearchField } from '@/components/CompactSearchField';
 import {
   DesktopCell,
   DesktopCellText,
@@ -802,21 +803,11 @@ export default function TeacherEventsScreen() {
           </Pressable>
           {filtersExpanded ? (
             <Card.Content style={{ paddingTop: 0, paddingBottom: 12, gap: 8 }}>
-              <TextInput
-                mode="outlined"
-                dense
-                placeholder="Search events…"
-                placeholderTextColor={GM.black}
+              <CompactSearchField
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                textColor={GM.black}
-                left={<TextInput.Icon icon="magnify" color={GM.black} size={20} forceTextInputFocus={false} />}
-                right={
-                  searchQuery ? (
-                    <TextInput.Icon icon="close" color={GM.black} size={20} onPress={() => setSearchQuery('')} />
-                  ) : undefined
-                }
-                className="gm-input-inverse"
+                placeholder="Search events…"
+                height={40}
               />
 
               <View style={{ gap: 4 }}>

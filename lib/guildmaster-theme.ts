@@ -79,10 +79,27 @@ export const tabScreenOptions = {
     backgroundColor: GM.black,
     borderTopColor: GM.outline,
     borderTopWidth: 1,
+    // Keep bottom tabs pinned on mobile web (document scroll must not lift the bar).
+    ...(Platform.OS === 'web'
+      ? {
+          position: 'sticky' as const,
+          bottom: 0,
+          zIndex: 40,
+        }
+      : null),
   },
   tabBarActiveTintColor: GM.primary,
   tabBarInactiveTintColor: GM.tertiary,
-  headerStyle: { backgroundColor: GM.black },
+  headerStyle: {
+    backgroundColor: GM.black,
+    ...(Platform.OS === 'web'
+      ? {
+          position: 'sticky' as const,
+          top: 0,
+          zIndex: 40,
+        }
+      : null),
+  },
   headerTintColor: GM.onBackground,
 };
 

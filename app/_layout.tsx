@@ -11,7 +11,7 @@ import { GM, guildMasterTheme } from '@/lib/guildmaster-theme';
 
 export default function Layout() {
   return (
-    <View style={{ flex: 1, minHeight: '100vh' }}>
+    <View style={{ flex: 1, height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
       <SafeAreaProvider>
         <PaperProvider theme={guildMasterTheme}>
           <StatusBar style="light" />

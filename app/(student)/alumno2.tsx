@@ -21,6 +21,7 @@ import {
   DesktopCellText,
   DesktopListHeader,
 } from '@/components/DesktopListRow';
+import { CompactSearchField, COMPACT_SEARCH_FIELD_HEIGHT } from '@/components/CompactSearchField';
 import {
   apiErrorMessage,
   createEvent,
@@ -137,6 +138,8 @@ export default function SkillsScreen() {
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [targetCharacterId, setTargetCharacterId] = useState<number | null>(null);
   const [targetPartyId, setTargetPartyId] = useState<number | null>(null);
+  const [characterQuery, setCharacterQuery] = useState('');
+  const [partyQuery, setPartyQuery] = useState('');
   const [changeJobTarget, setChangeJobTarget] = useState<CharacterJob | null>(null);
   const [jobMenuVisible, setJobMenuVisible] = useState(false);
   const [expandedLevels, setExpandedLevels] = useState<Record<(typeof LEVEL_SECTIONS)[number], boolean>>({
@@ -215,6 +218,21 @@ export default function SkillsScreen() {
     return parties.filter((p) => p.guild_id === selectedCharacter.guild_id);
   }, [parties, selectedCharacter]);
 
+  const filteredGuildCharacters = useMemo(() => {
+    const q = characterQuery.trim().toLowerCase();
+    if (!q) return guildCharacters;
+    return guildCharacters.filter((character) => {
+      const haystack = `${character.name} ${character.job} ${character.level}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [characterQuery, guildCharacters]);
+
+  const filteredGuildParties = useMemo(() => {
+    const q = partyQuery.trim().toLowerCase();
+    if (!q) return guildParties;
+    return guildParties.filter((party) => party.name.toLowerCase().includes(q));
+  }, [partyQuery, guildParties]);
+
   const otherJobs = useMemo(() => {
     if (!selectedCharacter) return JOBS;
     return JOBS.filter((job) => job !== selectedCharacter.job);
@@ -258,6 +276,8 @@ export default function SkillsScreen() {
       setActiveSkill(skill);
       setTargetPartyId(null);
       setChangeJobTarget(null);
+      setCharacterQuery('');
+      setPartyQuery('');
       setJobMenuVisible(false);
       if (isProgressionSkill(skill)) {
         setTargetCharacterId(selectedCharacter.id);
@@ -598,32 +618,80 @@ export default function SkillsScreen() {
           ) : null}
 
           {activeSkill?.aoe === 'SINGLE' && activeSkill && !isProgressionSkill(activeSkill) ? (
-            <View style={{ marginTop: 12, gap: 4 }}>
-              <Text variant="titleSmall">Target character</Text>
-              <RadioButton.Group
-                value={targetCharacterId ? String(targetCharacterId) : ''}
-                onValueChange={(value) => setTargetCharacterId(Number(value))}>
-                {guildCharacters.map((character) => (
-                  <RadioButton.Item
-                    key={character.id}
-                    label={`${character.name} (${character.job})`}
-                    value={String(character.id)}
-                  />
-                ))}
-              </RadioButton.Group>
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                <Text
+                  variant="titleSmall"
+                  style={{ flexShrink: 0, lineHeight: COMPACT_SEARCH_FIELD_HEIGHT }}>
+                  Target character
+                </Text>
+                <CompactSearchField
+                  value={characterQuery}
+                  onChangeText={setCharacterQuery}
+                  placeholder="Search"
+                />
+              </View>
+              <ScrollView
+                style={{ maxHeight: 240 }}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled">
+                <RadioButton.Group
+                  value={targetCharacterId ? String(targetCharacterId) : ''}
+                  onValueChange={(value) => setTargetCharacterId(Number(value))}>
+                  {filteredGuildCharacters.map((character) => (
+                    <RadioButton.Item
+                      key={character.id}
+                      label={`${character.name} (${character.job})`}
+                      value={String(character.id)}
+                    />
+                  ))}
+                </RadioButton.Group>
+                {!filteredGuildCharacters.length ? (
+                  <Text style={{ marginVertical: 8, color: GM.tertiary }}>No characters match.</Text>
+                ) : null}
+              </ScrollView>
             </View>
           ) : null}
 
           {activeSkill?.aoe === 'PARTY' ? (
-            <View style={{ marginTop: 12, gap: 4 }}>
-              <Text variant="titleSmall">Target party</Text>
-              <RadioButton.Group
-                value={targetPartyId ? String(targetPartyId) : ''}
-                onValueChange={(value) => setTargetPartyId(Number(value))}>
-                {guildParties.map((party) => (
-                  <RadioButton.Item key={party.id} label={party.name} value={String(party.id)} />
-                ))}
-              </RadioButton.Group>
+            <View style={{ marginTop: 12, gap: 8 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                }}>
+                <Text
+                  variant="titleSmall"
+                  style={{ flexShrink: 0, lineHeight: COMPACT_SEARCH_FIELD_HEIGHT }}>
+                  Target party
+                </Text>
+                <CompactSearchField
+                  value={partyQuery}
+                  onChangeText={setPartyQuery}
+                  placeholder="Search"
+                />
+              </View>
+              <ScrollView
+                style={{ maxHeight: 240 }}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled">
+                <RadioButton.Group
+                  value={targetPartyId ? String(targetPartyId) : ''}
+                  onValueChange={(value) => setTargetPartyId(Number(value))}>
+                  {filteredGuildParties.map((party) => (
+                    <RadioButton.Item key={party.id} label={party.name} value={String(party.id)} />
+                  ))}
+                </RadioButton.Group>
+                {!filteredGuildParties.length ? (
+                  <Text style={{ marginVertical: 8, color: GM.tertiary }}>No parties match.</Text>
+                ) : null}
+              </ScrollView>
             </View>
           ) : null}
 

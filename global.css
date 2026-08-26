@@ -63,6 +63,7 @@
   /* Screens */
   .gm-screen {
     @apply flex-1 bg-gm-black;
+    min-height: 0;
   }
 
   .gm-screen-center {
@@ -105,9 +106,17 @@
     @apply shrink font-bold text-gm-primary;
   }
 
-  /* App header */
+  /* App header — sticky on mobile web so chrome stays while content scrolls */
   .gm-header {
     @apply gap-2 border-b border-gm-outline bg-gm-black px-3 pb-2;
+  }
+
+  @media (max-width: 899px) {
+    .gm-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
   }
 
   /* Filters / accordion / modal shells */
