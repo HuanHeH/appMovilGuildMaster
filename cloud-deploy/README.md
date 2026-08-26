@@ -4,10 +4,10 @@
 
 | Host | Service |
 |------|---------|
-| `https://guildmaster.duckdns.org` | Expo web (`/root/guildmaster-web`) |
+| `https://guildmaster.duckdns.org` | Expo web (hostname only — not by IP) |
 | `https://guildmasterapi.duckdns.org` | Spring API |
 | `https://guildmasteradmin.duckdns.org` | API Admin UI (`login.html`) |
-| `https://SERVER_IP/` | phpMyAdmin (IP; accept cert warning). Not `:8080`. |
+| `https://SERVER_IP/` or `:8445` | phpMyAdmin (IP; accept cert warning) |
 
 All on port **443** (HTTP 80 redirects to HTTPS).
 
