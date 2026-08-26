@@ -14,6 +14,6 @@ chmod +x deploy-web-on-server.sh
 bash deploy-web-on-server.sh /root/guildmaster-web-dist.tar.gz
 ```
 
-Open Clouding port **8444**. App URL: `https://SERVER_IP:8444/`
+Files land in **`/root/guildmaster-web`**. Open Clouding port **8444**. App URL: `https://SERVER_IP:8444/`
 
 Rebuild locally: `EXPO_PUBLIC_API_BASE_URL=https://SERVER:8443/api npm run web:export` then refresh the tarball in this folder.

@@ -2,7 +2,7 @@
 # Deploy GuildMaster web static (run on Clouding server as root)
 set -euo pipefail
 
-WEB_DIR=/opt/guildmaster-web
+WEB_DIR=/root/guildmaster-web
 SSL_DIR=/opt/phpmyadmin-ssl
 ARCHIVE="${1:-/root/guildmaster-web-dist.tar.gz}"
 
@@ -12,7 +12,9 @@ if [[ ! -f "$ARCHIVE" ]]; then
   exit 1
 fi
 
-mkdir -p "$WEB_DIR" "$SSL_DIR"
+mkdir -p "$WEB_DIR"
+# SSL certs/config stay under /opt/phpmyadmin-ssl (shared with phpMyAdmin proxy)
+mkdir -p "$SSL_DIR"
 rm -rf "${WEB_DIR:?}/"*
 tar -xzf "$ARCHIVE" -C "$WEB_DIR"
 
