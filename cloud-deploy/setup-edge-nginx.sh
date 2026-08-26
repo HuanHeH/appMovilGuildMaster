@@ -4,7 +4,7 @@
 set -euo pipefail
 
 CERT_NAME=guildmaster.duckdns.org
-DOMAINS=(-d guildmaster.duckdns.org -d guildmasterapi.duckdns.org -d guildmasteradmin.duckdns.org)
+DOMAINS=(-d guildmaster.duckdns.org -d guildmasterapi.duckdns.org -d guildmasteradmin.duckdns.org -d guildmasterpma.duckdns.org)
 WEB_DIR=/root/guildmaster-web
 EDGE_DIR=/root/gm-edge
 CONF_SRC="${1:-/root/nginx-edge.conf}"
@@ -20,6 +20,21 @@ if [[ ! -d "$WEB_DIR" ]]; then
   exit 1
 fi
 
+echo "==> Ensuring phpMyAdmin listens on host :8080…"
+if ! docker ps --format '{{.Names}}' | grep -qx phpmyadmin; then
+  docker rm -f phpmyadmin 2>/dev/null || true
+  docker run -d \
+    --name phpmyadmin \
+    --restart unless-stopped \
+    --add-host=host.docker.internal:host-gateway \
+    -e PMA_HOST=host.docker.internal \
+    -e PMA_PORT=3306 \
+    -p 8080:80 \
+    phpmyadmin:latest
+else
+  echo "    phpmyadmin container already running"
+fi
+
 echo "==> Stopping old public proxies (443/8443/8444)…"
 docker rm -f pma-proxy api-proxy web-proxy gm-edge 2>/dev/null || true
 
@@ -27,7 +42,7 @@ mkdir -p "$EDGE_DIR/certbot" /var/www/certbot
 cp "$CONF_SRC" "$EDGE_DIR/nginx-edge.conf"
 
 echo "==> Obtaining / renewing Let's Encrypt cert (standalone on :80)…"
-# If a cert already exists, certbot renew/certonly will reuse or expand.
+# Expand/reissue to include all hostnames (incl. guildmasterpma).
 docker run --rm \
   -p 80:80 \
   -v /etc/letsencrypt:/etc/letsencrypt \
@@ -36,7 +51,8 @@ docker run --rm \
   --cert-name "$CERT_NAME" \
   "${DOMAINS[@]}" \
   --agree-tos --register-unsafely-without-email --non-interactive \
-  --preferred-challenges http
+  --preferred-challenges http \
+  --expand
 
 echo "==> Starting edge nginx on 80+443…"
 docker run -d \
@@ -52,15 +68,15 @@ docker run -d \
   nginx:alpine
 
 sleep 2
-docker ps --filter name=gm-edge
+docker ps --filter name=gm-edge --filter name=phpmyadmin
 echo
 echo "Smoke tests:"
 curl -sI "https://guildmaster.duckdns.org/" | head -n 5 || true
 curl -s "https://guildmasterapi.duckdns.org/actuator/health" || true
 echo
 curl -sI "https://guildmasteradmin.duckdns.org/login.html" | head -n 5 || true
+curl -sI "https://guildmasterpma.duckdns.org/" | head -n 5 || true
 echo
 echo "Done."
-echo "Next: set CORS_ALLOWED_ORIGINS on guildmaster-api systemd, then restart the API."
-echo "  https://guildmaster.duckdns.org,https://guildmasterapi.duckdns.org,https://guildmasteradmin.duckdns.org,http://localhost:8082"
-echo "phpMyAdmin is no longer on :443 — add a 4th DuckDNS host later if needed."
+echo "phpMyAdmin: https://guildmasterpma.duckdns.org/"
+echo "Create DuckDNS subdomain guildmasterpma → your server IP if missing."

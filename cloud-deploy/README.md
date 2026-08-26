@@ -7,6 +7,7 @@
 | `https://guildmaster.duckdns.org` | Expo web (`/root/guildmaster-web`) |
 | `https://guildmasterapi.duckdns.org` | Spring API |
 | `https://guildmasteradmin.duckdns.org` | API Admin UI (`login.html`) |
+| `https://guildmasterpma.duckdns.org` | phpMyAdmin |
 
 All on port **443** (HTTP 80 redirects to HTTPS).
 
