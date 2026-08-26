@@ -10,8 +10,12 @@ cp .env.example .env.local
 npm run web
 ```
 
-The default API URL is `http://localhost:8081/api`. Override it in
-`.env.local` with `EXPO_PUBLIC_API_BASE_URL` when the backend is elsewhere.
+The API URL is set with `EXPO_PUBLIC_API_BASE_URL` in `.env.local`
+(copy from `.env.example`). Production default:
+
+`https://guildmasterapi.duckdns.org/api`
+
+For a local API: `http://localhost:8081/api` (Android emulator: `http://10.0.2.2:8081/api`).
 
 Build a static web bundle with:
 
