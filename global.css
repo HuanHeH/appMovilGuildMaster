@@ -7,6 +7,7 @@
   Components reference these classes via NativeWind className.
 */
 :root {
+  color-scheme: dark only;
   --gm-black: #000000;
   --gm-background: #131313;
   --gm-surface-container: #0a0a0a;

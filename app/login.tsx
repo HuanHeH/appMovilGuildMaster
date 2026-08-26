@@ -69,7 +69,7 @@ export default function LoginScreen() {
         <View className="gm-login-brand">
           <Icon source="sword-cross" size={56} color={GM.primaryContainer} />
           <Text variant="headlineMedium" className="gm-text-on-bg text-center">
-            GuildMaster{'\n'}Mobile
+            GuildMaster
           </Text>
         </View>
         <TextInput
