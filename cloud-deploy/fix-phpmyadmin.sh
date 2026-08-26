@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Fix phpMyAdmin only (502 on https://IP/ ). Run as root.
+# Fix phpMyAdmin only (502 on https://IP/). Run as root.
+# Usage:
+#   bash fix-phpmyadmin.sh [IP] [MYSQL_ROOT_PASSWORD]
+# Example:
+#   bash fix-phpmyadmin.sh 187.33.148.249 GuildmasterPassword
 set -euo pipefail
 
 IP="${1:-187.33.148.249}"
+DB_PASS="${2:-${MARIADB_ROOT_PASSWORD:-miPassword}}"
 
 echo "==> Recreate phpMyAdmin on 127.0.0.1:8080…"
 docker rm -f phpmyadmin 2>/dev/null || true
@@ -31,15 +36,16 @@ for i in 1 2 3 4 5 6 7 8 9 10; do
 done
 
 echo "==> Ensure MariaDB reachable from host…"
-docker exec mariadb mariadb -uroot -pmiPassword -e "SELECT 1;" >/dev/null 2>&1 \
-  && echo "    mariadb OK" \
-  || echo "WARNING: cannot login to mariadb with root/miPassword — fix DB password in this script"
+if docker exec mariadb mariadb -uroot -p"${DB_PASS}" -e "SELECT 1;" >/dev/null 2>&1; then
+  echo "    mariadb OK (root password accepted)"
+else
+  echo "WARNING: cannot login to mariadb as root with the password you passed."
+  echo "         phpMyAdmin page may load, but login will fail until the password matches."
+fi
 
 echo "==> Recreate gm-edge with current nginx-edge.conf…"
-if [[ ! -f /root/nginx-edge.conf ]]; then
-  curl -L -o /root/nginx-edge.conf \
-    https://github.com/HuanHeH/appMovilGuildMaster/raw/main/cloud-deploy/nginx-edge.conf
-fi
+curl -L -o /root/nginx-edge.conf \
+  https://github.com/HuanHeH/appMovilGuildMaster/raw/main/cloud-deploy/nginx-edge.conf
 mkdir -p /root/gm-edge /var/www/certbot /root/guildmaster-web
 cp /root/nginx-edge.conf /root/gm-edge/nginx-edge.conf
 
@@ -66,5 +72,5 @@ docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'NAMES|
 echo
 echo "Open: https://${IP}/  or  https://${IP}:8445/"
 echo "Accept the certificate warning (cert is for DuckDNS, not the IP)."
-echo "Login: root / your MariaDB password"
+echo "Login: root / (same password you passed to this script)"
 echo "App web stays at: https://guildmaster.duckdns.org"
