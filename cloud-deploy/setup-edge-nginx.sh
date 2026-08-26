@@ -59,6 +59,7 @@ docker run -d \
   --add-host=host.docker.internal:host-gateway \
   -p 80:80 \
   -p 443:443 \
+  -p 8445:8445 \
   -v "$EDGE_DIR/nginx-edge.conf":/etc/nginx/conf.d/default.conf:ro \
   -v /etc/letsencrypt:/etc/letsencrypt:ro \
   -v "$WEB_DIR":/usr/share/nginx/html:ro \
@@ -76,6 +77,6 @@ curl -sI "https://guildmasteradmin.duckdns.org/login.html" | head -n 5 || true
 curl -sI "https://127.0.0.1/" -k | head -n 5 || true
 echo
 echo "Done."
-echo "phpMyAdmin by IP: https://SERVER_IP/  (accept cert warning once)"
-echo "Do NOT use http://SERVER_IP:8080 — HSTS forces HTTPS and :8080 has no TLS."
-echo "DuckDNS apps stay on their hostnames :443."
+echo "phpMyAdmin by IP: https://SERVER_IP/  or  https://SERVER_IP:8445/"
+echo "App web: https://guildmaster.duckdns.org  (not by IP)"
+echo "Open Clouding ports 443 and 8445."
