@@ -21,15 +21,17 @@ if [[ ! -d "$WEB_DIR" ]]; then
   exit 1
 fi
 
-echo "==> Ensuring phpMyAdmin on 0.0.0.0:8080 (direct IP access)…"
+echo "==> Ensuring phpMyAdmin on 127.0.0.1:8080 (reached via https://SERVER_IP/)…"
 docker rm -f phpmyadmin 2>/dev/null || true
+# Bind localhost only — public access is https://IP/ through gm-edge (HSTS-safe).
 docker run -d \
   --name phpmyadmin \
   --restart unless-stopped \
   --add-host=host.docker.internal:host-gateway \
   -e PMA_HOST=host.docker.internal \
   -e PMA_PORT=3306 \
-  -p 8080:80 \
+  -e PMA_ABSOLUTE_URI=https://187.33.148.249/ \
+  -p 127.0.0.1:8080:80 \
   phpmyadmin:latest
 
 echo "==> Stopping old public proxies (443/8443/8444) — keep phpmyadmin…"
@@ -71,8 +73,9 @@ curl -sI "https://guildmaster.duckdns.org/" | head -n 5 || true
 curl -s "https://guildmasterapi.duckdns.org/actuator/health" || true
 echo
 curl -sI "https://guildmasteradmin.duckdns.org/login.html" | head -n 5 || true
-curl -sI "http://127.0.0.1:8080/" | head -n 5 || true
+curl -sI "https://127.0.0.1/" -k | head -n 5 || true
 echo
 echo "Done."
-echo "phpMyAdmin (IP): http://SERVER_IP:8080/  — open Clouding port 8080"
-echo "DuckDNS apps stay on :443 only."
+echo "phpMyAdmin by IP: https://SERVER_IP/  (accept cert warning once)"
+echo "Do NOT use http://SERVER_IP:8080 — HSTS forces HTTPS and :8080 has no TLS."
+echo "DuckDNS apps stay on their hostnames :443."
