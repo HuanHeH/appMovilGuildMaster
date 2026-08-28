@@ -17,7 +17,7 @@ import type {
 const configuredBaseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
   (Platform.OS === 'web'
-    ? 'https://guildmasterapi.duckdns.org/api'
+    ? 'https://api.guildmasterweb.com/api'
     : Platform.OS === 'android'
       ? 'http://10.0.2.2:8081/api'
       : 'http://localhost:8081/api');

@@ -4,9 +4,9 @@
 
 | Host | Service |
 |------|---------|
-| `https://guildmaster.duckdns.org` | Expo web (hostname only — not by IP) |
-| `https://guildmasterapi.duckdns.org` | Spring API |
-| `https://guildmasteradmin.duckdns.org` | API Admin UI (`login.html`) |
+| `https://guildmasterweb.com` | Expo web (hostname only — not by IP) |
+| `https://api.guildmasterweb.com` | Spring API |
+| `https://admin.guildmasterweb.com` | API Admin UI (`login.html`) |
 | `https://SERVER_IP/` or `:8445` | phpMyAdmin (IP; accept cert warning) |
 
 All on port **443** (HTTP 80 redirects to HTTPS).
@@ -42,7 +42,7 @@ bash setup-edge-nginx.sh /root/nginx-edge.conf
 ## 3) API CORS (systemd)
 
 ```ini
-Environment=CORS_ALLOWED_ORIGINS=https://guildmaster.duckdns.org,https://guildmasterapi.duckdns.org,https://guildmasteradmin.duckdns.org,http://localhost:8082
+Environment=CORS_ALLOWED_ORIGINS=https://guildmasterweb.com,https://api.guildmasterweb.com,https://admin.guildmasterweb.com,http://localhost:8082
 ```
 
 Then: `sudo systemctl daemon-reload && sudo systemctl restart guildmaster-api`
@@ -50,7 +50,7 @@ Then: `sudo systemctl daemon-reload && sudo systemctl restart guildmaster-api`
 ## Rebuild web locally
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=https://guildmasterapi.duckdns.org/api npm run web:export
+EXPO_PUBLIC_API_BASE_URL=https://api.guildmasterweb.com/api npm run web:export
 ```
 
 Then refresh `cloud-deploy/guildmaster-web-dist.tar.gz` and re-run step 1 (or copy `dist/` into `/root/guildmaster-web`).

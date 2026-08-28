@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Install edge nginx (443) for guildmaster*.duckdns.org + Let's Encrypt
-# phpMyAdmin stays on host :8080 for direct IP access (not behind DuckDNS).
+# Install edge nginx (443) for guildmasterweb.com + Let's Encrypt
+# phpMyAdmin stays on host :8080 for direct IP access (not behind domain).
 # Run on Clouding as root. Requires: Docker, ports 80+443 free/open, DNS already pointing here.
 set -euo pipefail
 
-CERT_NAME=guildmaster.duckdns.org
-DOMAINS=(-d guildmaster.duckdns.org -d guildmasterapi.duckdns.org -d guildmasteradmin.duckdns.org)
+CERT_NAME=guildmasterweb.com
+DOMAINS=(-d guildmasterweb.com -d api.guildmasterweb.com -d admin.guildmasterweb.com)
 WEB_DIR=/root/guildmaster-web
 EDGE_DIR=/root/gm-edge
 CONF_SRC="${1:-/root/nginx-edge.conf}"
@@ -23,7 +23,6 @@ fi
 
 echo "==> Ensuring phpMyAdmin on 127.0.0.1:8080 (reached via https://SERVER_IP/)…"
 docker rm -f phpmyadmin 2>/dev/null || true
-# Bind localhost only — public access is https://IP/ through gm-edge (HSTS-safe).
 docker run -d \
   --name phpmyadmin \
   --restart unless-stopped \
@@ -70,13 +69,13 @@ sleep 2
 docker ps --filter name=gm-edge --filter name=phpmyadmin
 echo
 echo "Smoke tests:"
-curl -sI "https://guildmaster.duckdns.org/" | head -n 5 || true
-curl -s "https://guildmasterapi.duckdns.org/actuator/health" || true
+curl -sI "https://guildmasterweb.com/" | head -n 5 || true
+curl -s "https://api.guildmasterweb.com/actuator/health" || true
 echo
-curl -sI "https://guildmasteradmin.duckdns.org/login.html" | head -n 5 || true
+curl -sI "https://admin.guildmasterweb.com/login.html" | head -n 5 || true
 curl -sI "https://127.0.0.1/" -k | head -n 5 || true
 echo
 echo "Done."
 echo "phpMyAdmin by IP: https://SERVER_IP/  or  https://SERVER_IP:8445/"
-echo "App web: https://guildmaster.duckdns.org  (not by IP)"
+echo "App web: https://guildmasterweb.com  (not by IP)"
 echo "Open Clouding ports 443 and 8445."
