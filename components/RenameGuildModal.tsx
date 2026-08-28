@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Button, Divider, HelperText, Modal, Portal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Divider, HelperText, Modal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { apiErrorMessage, updateGuildName } from '@/lib/api';
 
@@ -54,11 +54,10 @@ export function RenameGuildModal({
 
   return (
     <>
-      <Portal>
-        <Modal
-          visible={visible}
-          onDismiss={onDismiss}
-          contentContainerStyle={{
+      <Modal
+        visible={visible}
+        onDismiss={onDismiss}
+        contentContainerStyle={{
             margin: 16,
             backgroundColor: theme.colors.surface,
             borderRadius: 12,
@@ -95,7 +94,6 @@ export function RenameGuildModal({
             </Button>
           </View>
         </Modal>
-      </Portal>
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
         {snackbar}
       </Snackbar>
