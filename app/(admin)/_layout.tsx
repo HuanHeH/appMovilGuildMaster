@@ -1,7 +1,9 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Icon, IconButton } from 'react-native-paper';
 
 import { AppSidebar } from '@/components/AppSidebar';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { logout } from '@/lib/api';
 import { GM, tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useIsDesktop } from '@/lib/use-is-desktop';
@@ -13,6 +15,7 @@ export default function AdminTabsLayout() {
   const session = useAuthStore((state) => state.session);
   const role = session?.role;
   const clearSession = useAuthStore((state) => state.clearSession);
+  const [pwModalVisible, setPwModalVisible] = useState(false);
 
   const onLogout = async () => {
     try {
@@ -38,6 +41,7 @@ export default function AdminTabsLayout() {
                 brandTitle="Admin GuildMaster"
                 userName={session?.name}
                 onLogout={onLogout}
+                onChangePassword={() => setPwModalVisible(true)}
               />
             )
           : undefined
@@ -56,7 +60,10 @@ export default function AdminTabsLayout() {
             }
           : tabScreenOptions.tabBarStyle,
         headerRight: () => (
-          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
+          <>
+            <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
+            <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
+          </>
         ),
       }}>
       <Tabs.Screen
@@ -86,6 +93,7 @@ export default function AdminTabsLayout() {
           ),
         }}
       />
+      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </Tabs>
   );
 }

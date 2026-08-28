@@ -6,6 +6,7 @@ export const API_ENDPOINTS = {
     update: (id: number) => `/users/${id}`,
     remove: (id: number) => `/users/${id}`,
     login: '/users/login',
+    changePassword: '/users/me/password',
   },
   guilds: {
     list: '/guilds',

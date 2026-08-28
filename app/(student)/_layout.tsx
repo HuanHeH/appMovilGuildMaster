@@ -1,9 +1,11 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
 import { GM, headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
@@ -17,6 +19,7 @@ function StudentHeader() {
   const session = useAuthStore((state) => state.session);
   const clearSession = useAuthStore((state) => state.clearSession);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
+  const [pwModalVisible, setPwModalVisible] = useState(false);
 
   const onLogout = async () => {
     try {
@@ -44,6 +47,7 @@ function StudentHeader() {
           <Chip compact icon="account">
             {session?.name ?? 'Unknown'}
           </Chip>
+          <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
           <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
         </View>
       </View>
@@ -55,6 +59,7 @@ function StudentHeader() {
           </Chip>
         </View>
       ) : null}
+      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </View>
   );
 }
@@ -67,6 +72,7 @@ export default function StudentTabsLayout() {
   const clearSession = useAuthStore((state) => state.clearSession);
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
+  const [pwModalVisible, setPwModalVisible] = useState(false);
 
   const requireCharacter = (e: { preventDefault: () => void }) => {
     if (!selectedCharacterId) {
@@ -107,6 +113,7 @@ export default function StudentTabsLayout() {
                 contextIcon="sword-cross"
                 userName={session?.name}
                 onLogout={onLogout}
+                onChangePassword={() => setPwModalVisible(true)}
               />
             )
           : undefined
@@ -155,6 +162,7 @@ export default function StudentTabsLayout() {
         }}
         listeners={{ tabPress: requireCharacter }}
       />
+      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </Tabs>
   );
 }

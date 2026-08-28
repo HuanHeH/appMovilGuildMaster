@@ -1,10 +1,11 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
 import { GM, headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
@@ -21,6 +22,7 @@ function TeacherHeader() {
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
   const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
   const selectedGuild = useGuildStore(selectSelectedGuild);
+  const [pwModalVisible, setPwModalVisible] = useState(false);
 
   useEffect(() => {
     if (!session) return;
@@ -53,6 +55,7 @@ function TeacherHeader() {
           <Chip compact icon="account">
             {session?.name ?? 'Unknown'}
           </Chip>
+          <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
           <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
         </View>
       </View>
@@ -64,6 +67,7 @@ function TeacherHeader() {
           </Chip>
         </View>
       ) : null}
+      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </View>
   );
 }
@@ -78,6 +82,7 @@ export default function TeacherTabsLayout() {
   const selectedGuild = useGuildStore(selectSelectedGuild);
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
   const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
+  const [pwModalVisible, setPwModalVisible] = useState(false);
 
   useEffect(() => {
     if (!session || !isDesktop) return;
@@ -121,6 +126,7 @@ export default function TeacherTabsLayout() {
                 contextIcon="school"
                 userName={session?.name}
                 onLogout={onLogout}
+                onChangePassword={() => setPwModalVisible(true)}
               />
             )
           : undefined
@@ -169,6 +175,7 @@ export default function TeacherTabsLayout() {
         }}
         listeners={{ tabPress: requireGuild }}
       />
+      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </Tabs>
   );
 }

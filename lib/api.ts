@@ -69,6 +69,10 @@ export async function logout() {
   await api.post('/users/logout');
 }
 
+export async function changePassword(oldPassword: string, newPassword: string, confirmPassword: string) {
+  await api.post(API_ENDPOINTS.users.changePassword, { oldPassword, newPassword, confirmPassword });
+}
+
 export async function getCharacters(guildId: number) {
   const { data } = await api.get<Character[]>(API_ENDPOINTS.characters.list, {
     params: { guild_id: guildId },

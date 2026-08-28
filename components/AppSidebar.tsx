@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GM } from '@/lib/guildmaster-theme';
 
 export type AppSidebarProps = {
-  /** From Expo Router `tabBar` — kept loose (expo-router / RN type mismatch). */
   state: any;
   descriptors: any;
   navigation: any;
@@ -15,6 +14,7 @@ export type AppSidebarProps = {
   contextIcon?: string;
   userName?: string | null;
   onLogout: () => void;
+  onChangePassword?: () => void;
 };
 
 /**
@@ -30,6 +30,7 @@ export function AppSidebar({
   contextIcon = 'information-outline',
   userName,
   onLogout,
+  onChangePassword,
 }: AppSidebarProps) {
   const insets = useSafeAreaInsets();
 
@@ -185,6 +186,15 @@ export function AppSidebar({
             style={{ color: GM.onSurface, flex: 1, fontWeight: '500' }}>
             {userName ?? 'Unknown'}
           </Text>
+          {onChangePassword ? (
+            <IconButton
+              icon="lock-reset"
+              size={18}
+              onPress={onChangePassword}
+              accessibilityLabel="Change password"
+              style={{ margin: 0 }}
+            />
+          ) : null}
           <IconButton
             icon="logout"
             size={18}
