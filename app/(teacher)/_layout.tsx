@@ -93,66 +93,68 @@ export default function TeacherTabsLayout() {
   const contextLabel = selectedGuild ? guildLabel(selectedGuild) : null;
 
   return (
-    <Tabs
-      tabBar={
-        isDesktop
-          ? (props) => (
-              <AppSidebar
-                {...props}
-                brandTitle="Teacher GuildMaster"
-                contextLabel={contextLabel}
-                contextIcon="school"
-                userName={session?.name}
-                onLogout={onLogout}
-                onChangePassword={() => setSettingsVisible(true)}
-              />
-            )
-          : undefined
-      }
-      screenOptions={{
-        ...tabScreenOptions,
-        header: () => <TeacherHeader onOpenSettings={() => setSettingsVisible(true)} />,
-        headerShown: !isDesktop,
-        tabBarPosition: isDesktop ? 'left' : 'bottom',
-        tabBarStyle: isDesktop
-          ? {
-              backgroundColor: GM.surfaceContainer,
-              borderTopWidth: 0,
-              borderRightWidth: 0,
-              elevation: 0,
-              width: 240,
-            }
-          : tabScreenOptions.tabBarStyle,
-      }}>
-      <Tabs.Screen
-        name="profe1"
-        options={{
-          title: 'Guilds',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="school" color={String(color)} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profe2"
-        options={{
-          title: 'Skills',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="sword" color={String(color)} size={size} />
-          ),
-        }}
-        listeners={{ tabPress: requireGuild }}
-      />
-      <Tabs.Screen
-        name="profe3"
-        options={{
-          title: 'Events',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="calendar" color={String(color)} size={size} />
-          ),
-        }}
-        listeners={{ tabPress: requireGuild }}
-      />
+    <View style={{ flex: 1 }}>
+      <Tabs
+        tabBar={
+          isDesktop
+            ? (props) => (
+                <AppSidebar
+                  {...props}
+                  brandTitle="Teacher GuildMaster"
+                  contextLabel={contextLabel}
+                  contextIcon="school"
+                  userName={session?.name}
+                  onLogout={onLogout}
+                  onChangePassword={() => setSettingsVisible(true)}
+                />
+              )
+            : undefined
+        }
+        screenOptions={{
+          ...tabScreenOptions,
+          header: () => <TeacherHeader onOpenSettings={() => setSettingsVisible(true)} />,
+          headerShown: !isDesktop,
+          tabBarPosition: isDesktop ? 'left' : 'bottom',
+          tabBarStyle: isDesktop
+            ? {
+                backgroundColor: GM.surfaceContainer,
+                borderTopWidth: 0,
+                borderRightWidth: 0,
+                elevation: 0,
+                width: 240,
+              }
+            : tabScreenOptions.tabBarStyle,
+        }}>
+        <Tabs.Screen
+          name="profe1"
+          options={{
+            title: 'Guilds',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="school" color={String(color)} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profe2"
+          options={{
+            title: 'Skills',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="sword" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireGuild }}
+        />
+        <Tabs.Screen
+          name="profe3"
+          options={{
+            title: 'Events',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="calendar" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireGuild }}
+        />
+      </Tabs>
       <SettingsMenuModal
         visible={settingsVisible}
         onDismiss={() => setSettingsVisible(false)}
@@ -163,6 +165,6 @@ export default function TeacherTabsLayout() {
         visible={usernameVisible}
         onDismiss={() => setUsernameVisible(false)}
       />
-    </Tabs>
+    </View>
   );
 }

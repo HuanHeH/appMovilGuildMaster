@@ -5,7 +5,6 @@ import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
-import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import { ChangeUsernameModal } from '@/components/ChangeUsernameModal';
 import { SettingsMenuModal } from '@/components/SettingsMenuModal';
 import { logout } from '@/lib/api';
@@ -78,7 +77,6 @@ export default function StudentTabsLayout() {
     try {
       await logout();
     } catch {
-      // Clear the local session even if the server is unavailable.
     } finally {
       clearSession();
       useCharacterStore.getState().setSelectedCharacterId(null);
@@ -95,66 +93,68 @@ export default function StudentTabsLayout() {
     : null;
 
   return (
-    <Tabs
-      tabBar={
-        isDesktop
-          ? (props) => (
-              <AppSidebar
-                {...props}
-                brandTitle="Student GuildMaster"
-                contextLabel={contextLabel}
-                contextIcon="sword-cross"
-                userName={session?.name}
-                onLogout={onLogout}
-                onChangePassword={() => setSettingsVisible(true)}
-              />
-            )
-          : undefined
-      }
-      screenOptions={{
-        ...tabScreenOptions,
-        header: () => <StudentHeader onOpenSettings={() => setSettingsVisible(true)} />,
-        headerShown: !isDesktop,
-        tabBarPosition: isDesktop ? 'left' : 'bottom',
-        tabBarStyle: isDesktop
-          ? {
-              backgroundColor: GM.surfaceContainer,
-              borderTopWidth: 0,
-              borderRightWidth: 0,
-              elevation: 0,
-              width: 240,
-            }
-          : tabScreenOptions.tabBarStyle,
-      }}>
-      <Tabs.Screen
-        name="alumno1"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="account" color={String(color)} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="alumno2"
-        options={{
-          title: 'Skills',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="sword" color={String(color)} size={size} />
-          ),
-        }}
-        listeners={{ tabPress: requireCharacter }}
-      />
-      <Tabs.Screen
-        name="alumno3"
-        options={{
-          title: 'Events',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="calendar" color={String(color)} size={size} />
-          ),
-        }}
-        listeners={{ tabPress: requireCharacter }}
-      />
+    <View style={{ flex: 1 }}>
+      <Tabs
+        tabBar={
+          isDesktop
+            ? (props) => (
+                <AppSidebar
+                  {...props}
+                  brandTitle="Student GuildMaster"
+                  contextLabel={contextLabel}
+                  contextIcon="sword-cross"
+                  userName={session?.name}
+                  onLogout={onLogout}
+                  onChangePassword={() => setSettingsVisible(true)}
+                />
+              )
+            : undefined
+        }
+        screenOptions={{
+          ...tabScreenOptions,
+          header: () => <StudentHeader onOpenSettings={() => setSettingsVisible(true)} />,
+          headerShown: !isDesktop,
+          tabBarPosition: isDesktop ? 'left' : 'bottom',
+          tabBarStyle: isDesktop
+            ? {
+                backgroundColor: GM.surfaceContainer,
+                borderTopWidth: 0,
+                borderRightWidth: 0,
+                elevation: 0,
+                width: 240,
+              }
+            : tabScreenOptions.tabBarStyle,
+        }}>
+        <Tabs.Screen
+          name="alumno1"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="account" color={String(color)} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="alumno2"
+          options={{
+            title: 'Skills',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="sword" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireCharacter }}
+        />
+        <Tabs.Screen
+          name="alumno3"
+          options={{
+            title: 'Events',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="calendar" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireCharacter }}
+        />
+      </Tabs>
       <SettingsMenuModal
         visible={settingsVisible}
         onDismiss={() => setSettingsVisible(false)}
@@ -165,6 +165,6 @@ export default function StudentTabsLayout() {
         visible={usernameVisible}
         onDismiss={() => setUsernameVisible(false)}
       />
-    </Tabs>
+    </View>
   );
 }

@@ -1,5 +1,6 @@
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 import { Icon, IconButton } from 'react-native-paper';
 
 import { AppSidebar } from '@/components/AppSidebar';
@@ -35,68 +36,70 @@ export default function AdminTabsLayout() {
   if (role !== 'Admin') return <Redirect href="/" />;
 
   return (
-    <Tabs
-      tabBar={
-        isDesktop
-          ? (props) => (
-              <AppSidebar
-                {...props}
-                brandTitle="Admin GuildMaster"
-                userName={session?.name}
-                onLogout={onLogout}
-                onChangePassword={() => setSettingsVisible(true)}
-              />
-            )
-          : undefined
-      }
-      screenOptions={{
-        ...tabScreenOptions,
-        headerShown: !isDesktop,
-        tabBarPosition: isDesktop ? 'left' : 'bottom',
-        tabBarStyle: isDesktop
-          ? {
-              backgroundColor: GM.surfaceContainer,
-              borderTopWidth: 0,
-              borderRightWidth: 0,
-              elevation: 0,
-              width: 240,
-            }
-          : tabScreenOptions.tabBarStyle,
-        headerRight: () => (
-          <IconButton
-            icon="cog"
-            onPress={() => setSettingsVisible(true)}
-            accessibilityLabel="Settings"
-          />
-        ),
-      }}>
-      <Tabs.Screen
-        name="admin1"
-        options={{
-          title: 'Admin1',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="home" color={String(color)} size={size} />
+    <View style={{ flex: 1 }}>
+      <Tabs
+        tabBar={
+          isDesktop
+            ? (props) => (
+                <AppSidebar
+                  {...props}
+                  brandTitle="Admin GuildMaster"
+                  userName={session?.name}
+                  onLogout={onLogout}
+                  onChangePassword={() => setSettingsVisible(true)}
+                />
+              )
+            : undefined
+        }
+        screenOptions={{
+          ...tabScreenOptions,
+          headerShown: !isDesktop,
+          tabBarPosition: isDesktop ? 'left' : 'bottom',
+          tabBarStyle: isDesktop
+            ? {
+                backgroundColor: GM.surfaceContainer,
+                borderTopWidth: 0,
+                borderRightWidth: 0,
+                elevation: 0,
+                width: 240,
+              }
+            : tabScreenOptions.tabBarStyle,
+          headerRight: () => (
+            <IconButton
+              icon="cog"
+              onPress={() => setSettingsVisible(true)}
+              accessibilityLabel="Settings"
+            />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="admin2"
-        options={{
-          title: 'Admin2',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="account-group" color={String(color)} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="admin3"
-        options={{
-          title: 'Admin3',
-          tabBarIcon: ({ color, size }) => (
-            <Icon source="calendar" color={String(color)} size={size} />
-          ),
-        }}
-      />
+        }}>
+        <Tabs.Screen
+          name="admin1"
+          options={{
+            title: 'Admin1',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="home" color={String(color)} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="admin2"
+          options={{
+            title: 'Admin2',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="account-group" color={String(color)} size={size} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="admin3"
+          options={{
+            title: 'Admin3',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="calendar" color={String(color)} size={size} />
+            ),
+          }}
+        />
+      </Tabs>
       <SettingsMenuModal
         visible={settingsVisible}
         onDismiss={() => setSettingsVisible(false)}
@@ -107,6 +110,6 @@ export default function AdminTabsLayout() {
         visible={usernameVisible}
         onDismiss={() => setUsernameVisible(false)}
       />
-    </Tabs>
+    </View>
   );
 }
