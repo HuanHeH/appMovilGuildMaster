@@ -5,7 +5,7 @@
 set -euo pipefail
 
 CERT_NAME=guildmasterweb.com
-DOMAINS=(-d guildmasterweb.com -d www.guildmasterweb.com -d api.guildmasterweb.com -d admin.guildmasterweb.com)
+DOMAINS=(-d guildmasterweb.com -d api.guildmasterweb.com -d admin.guildmasterweb.com)
 WEB_DIR=/root/guildmaster-web
 EDGE_DIR=/root/gm-edge
 CONF_SRC="${1:-/root/nginx-edge.conf}"
