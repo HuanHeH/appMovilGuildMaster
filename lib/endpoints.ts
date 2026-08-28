@@ -6,7 +6,9 @@ export const API_ENDPOINTS = {
     update: (id: number) => `/users/${id}`,
     remove: (id: number) => `/users/${id}`,
     login: '/users/login',
+    logout: '/users/logout',
     changePassword: '/users/me/password',
+    changeName: (id: number) => `/users/${id}/name`,
   },
   guilds: {
     list: '/guilds',
@@ -14,6 +16,7 @@ export const API_ENDPOINTS = {
     create: '/guilds',
     update: (id: number) => `/guilds/${id}`,
     remove: (id: number) => `/guilds/${id}`,
+    updateName: (id: number) => `/guilds/${id}/name`,
   },
   mentorships: {
     list: '/mentorships',

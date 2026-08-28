@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
+import { ChangeUsernameModal } from '@/components/ChangeUsernameModal';
+import { SettingsMenuModal } from '@/components/SettingsMenuModal';
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
 import { GM, headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
@@ -13,26 +15,14 @@ import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedCharacter, useCharacterStore } from '@/store/character-store';
 
-function StudentHeader() {
+function StudentHeader({
+  onOpenSettings,
+}: {
+  onOpenSettings: () => void;
+}) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const session = useAuthStore((state) => state.session);
-  const clearSession = useAuthStore((state) => state.clearSession);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
-  const [pwModalVisible, setPwModalVisible] = useState(false);
-
-  const onLogout = async () => {
-    try {
-      await logout();
-    } catch {
-      // Clear the local session even if the server is unavailable.
-    } finally {
-      clearSession();
-      useCharacterStore.getState().setSelectedCharacterId(null);
-      useCharacterStore.getState().setCharacters([]);
-      router.replace('/login');
-    }
-  };
 
   return (
     <View className={headerClass} style={{ paddingTop: insets.top }}>
@@ -47,8 +37,11 @@ function StudentHeader() {
           <Chip compact icon="account">
             {session?.name ?? 'Unknown'}
           </Chip>
-          <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
-          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
+          <IconButton
+            icon="cog"
+            onPress={onOpenSettings}
+            accessibilityLabel="Settings"
+          />
         </View>
       </View>
 
@@ -59,7 +52,6 @@ function StudentHeader() {
           </Chip>
         </View>
       ) : null}
-      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </View>
   );
 }
@@ -72,7 +64,8 @@ export default function StudentTabsLayout() {
   const clearSession = useAuthStore((state) => state.clearSession);
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
-  const [pwModalVisible, setPwModalVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [usernameVisible, setUsernameVisible] = useState(false);
 
   const requireCharacter = (e: { preventDefault: () => void }) => {
     if (!selectedCharacterId) {
@@ -113,14 +106,14 @@ export default function StudentTabsLayout() {
                 contextIcon="sword-cross"
                 userName={session?.name}
                 onLogout={onLogout}
-                onChangePassword={() => setPwModalVisible(true)}
+                onChangePassword={() => setSettingsVisible(true)}
               />
             )
           : undefined
       }
       screenOptions={{
         ...tabScreenOptions,
-        header: () => <StudentHeader />,
+        header: () => <StudentHeader onOpenSettings={() => setSettingsVisible(true)} />,
         headerShown: !isDesktop,
         tabBarPosition: isDesktop ? 'left' : 'bottom',
         tabBarStyle: isDesktop
@@ -162,7 +155,16 @@ export default function StudentTabsLayout() {
         }}
         listeners={{ tabPress: requireCharacter }}
       />
-      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
+      <SettingsMenuModal
+        visible={settingsVisible}
+        onDismiss={() => setSettingsVisible(false)}
+        onChangeUsername={() => setUsernameVisible(true)}
+        onLogout={onLogout}
+      />
+      <ChangeUsernameModal
+        visible={usernameVisible}
+        onDismiss={() => setUsernameVisible(false)}
+      />
     </Tabs>
   );
 }

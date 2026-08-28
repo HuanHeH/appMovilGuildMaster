@@ -1,7 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
+import { ActivityIndicator, Card, IconButton, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
 import {
   DesktopCell,
@@ -9,6 +9,7 @@ import {
   DesktopListHeader,
   DesktopListRow,
 } from '@/components/DesktopListRow';
+import { RenameGuildModal } from '@/components/RenameGuildModal';
 import { centerScreenClass, GM, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
 import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
@@ -34,6 +35,7 @@ export default function TeacherGuildsScreen() {
 
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState('');
+  const [renameModal, setRenameModal] = useState<{ guildId: number; guildName: string } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -100,30 +102,40 @@ export default function TeacherGuildsScreen() {
                 {guilds.map((guild) => {
                   const selected = guild.id === selectedGuildId;
                   return (
-                    <DesktopListRow
-                      key={guild.id}
-                      selected={selected}
-                      onPress={() => setSelectedGuildId(guild.id)}>
-                      <DesktopCell flex={1.4}>
-                        <DesktopCellText
-                          primary={guild.name}
-                          secondary={selected ? 'Selected' : null}
-                          secondaryStyle={selected ? { color: GM.selectedText } : undefined}
-                        />
-                      </DesktopCell>
-                      <DesktopCell flex={1.2}>
-                        <DesktopCellText primary={guildClassLabel(guild)} />
-                      </DesktopCell>
-                      <DesktopCell flex={0.9}>
-                        <DesktopCellText primary={guild.level ?? '—'} />
-                      </DesktopCell>
-                      <DesktopCell flex={1}>
-                        <DesktopCellText primary={guild.modality ?? '—'} />
-                      </DesktopCell>
-                      <DesktopCell flex={0.7} minWidth={72}>
-                        <DesktopCellText primary={`${guild.number}${guild.letter}`} />
-                      </DesktopCell>
-                    </DesktopListRow>
+                    <View key={guild.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <DesktopListRow
+                          selected={selected}
+                          onPress={() => setSelectedGuildId(guild.id)}
+                          onLongPress={() => setRenameModal({ guildId: guild.id, guildName: guild.name })}>
+                          <DesktopCell flex={1.4}>
+                            <DesktopCellText
+                              primary={guild.name}
+                              secondary={selected ? 'Selected' : null}
+                              secondaryStyle={selected ? { color: GM.selectedText } : undefined}
+                            />
+                          </DesktopCell>
+                          <DesktopCell flex={1.2}>
+                            <DesktopCellText primary={guildClassLabel(guild)} />
+                          </DesktopCell>
+                          <DesktopCell flex={0.9}>
+                            <DesktopCellText primary={guild.level ?? '—'} />
+                          </DesktopCell>
+                          <DesktopCell flex={1}>
+                            <DesktopCellText primary={guild.modality ?? '—'} />
+                          </DesktopCell>
+                          <DesktopCell flex={0.7} minWidth={72}>
+                            <DesktopCellText primary={`${guild.number}${guild.letter}`} />
+                          </DesktopCell>
+                        </DesktopListRow>
+                      </View>
+                      <IconButton
+                        icon="pencil"
+                        size={18}
+                        onPress={() => setRenameModal({ guildId: guild.id, guildName: guild.name })}
+                        accessibilityLabel="Rename guild"
+                      />
+                    </View>
                   );
                 })}
               </View>
@@ -134,6 +146,7 @@ export default function TeacherGuildsScreen() {
                   <TouchableRipple
                     key={guild.id}
                     onPress={() => setSelectedGuildId(guild.id)}
+                    onLongPress={() => setRenameModal({ guildId: guild.id, guildName: guild.name })}
                     className={selectedRowClass(selected)}>
                     <List.Item
                       title={guild.name}
@@ -145,6 +158,9 @@ export default function TeacherGuildsScreen() {
                           icon={selected ? 'check-circle' : 'school'}
                           color={selected ? GM.selectedBorder : props.color}
                         />
+                      )}
+                      right={(props) => (
+                        <List.Icon {...props} icon="pencil" color={GM.tertiary} />
                       )}
                     />
                   </TouchableRipple>
@@ -158,6 +174,21 @@ export default function TeacherGuildsScreen() {
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={2500}>
         {snackbar}
       </Snackbar>
+
+      <RenameGuildModal
+        guildId={renameModal?.guildId ?? null}
+        guildName={renameModal?.guildName ?? ''}
+        visible={renameModal !== null}
+        onDismiss={() => setRenameModal(null)}
+        onRenamed={(newName) => {
+          if (renameModal) {
+            const updated = guilds.map((g) =>
+              g.id === renameModal.guildId ? { ...g, name: newName } : g
+            );
+            useGuildStore.setState({ guilds: updated });
+          }
+        }}
+      />
     </View>
   );
 }

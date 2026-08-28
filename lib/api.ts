@@ -73,6 +73,41 @@ export async function changePassword(oldPassword: string, newPassword: string, c
   await api.post(API_ENDPOINTS.users.changePassword, { oldPassword, newPassword, confirmPassword });
 }
 
+export async function changeUserName(id: number, name: string) {
+  const { data } = await api.put<{ id: number; name: string }>(
+    API_ENDPOINTS.users.changeName(id),
+    { name }
+  );
+  return data;
+}
+
+export async function updateGuildName(id: number, name: string) {
+  const { data } = await api.put<Guild>(API_ENDPOINTS.guilds.updateName(id), { name });
+  return data;
+}
+
+export async function createParty(party: { name: string; guildId: number }) {
+  const { data } = await api.post<Party>(API_ENDPOINTS.parties.create, party);
+  return data;
+}
+
+export async function updateParty(id: number, payload: { name?: string }) {
+  const { data } = await api.put<Party>(API_ENDPOINTS.parties.update(id), payload);
+  return data;
+}
+
+export async function deleteParty(id: number) {
+  await api.delete(API_ENDPOINTS.parties.remove(id));
+}
+
+export async function updateCharacterParty(characterId: number, partyId: number | null) {
+  const { data } = await api.put<Character>(
+    API_ENDPOINTS.characters.update(characterId),
+    { party_id: partyId }
+  );
+  return data;
+}
+
 export async function getCharacters(guildId: number) {
   const { data } = await api.get<Character[]>(API_ENDPOINTS.characters.list, {
     params: { guild_id: guildId },

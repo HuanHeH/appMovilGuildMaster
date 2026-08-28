@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
+import { ChangeUsernameModal } from '@/components/ChangeUsernameModal';
+import { SettingsMenuModal } from '@/components/SettingsMenuModal';
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
 import { GM, headerClass, tabScreenOptions } from '@/lib/guildmaster-theme';
@@ -14,33 +16,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { selectSelectedGuild, useGuildStore } from '@/store/guild-store';
 import { guildLabel } from '@/types/game';
 
-function TeacherHeader() {
+function TeacherHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const session = useAuthStore((state) => state.session);
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
-  const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
   const selectedGuild = useGuildStore(selectSelectedGuild);
-  const [pwModalVisible, setPwModalVisible] = useState(false);
-
-  useEffect(() => {
-    if (!session) return;
-    refreshGuilds().catch(() => undefined);
-  }, [session?.id, refreshGuilds]);
-
-  const onLogout = async () => {
-    try {
-      await logout();
-    } catch {
-      // Clear the local session even if the server is unavailable.
-    } finally {
-      clearSession();
-      setSelectedGuildId(null);
-      useGuildStore.getState().setGuilds([]);
-      router.replace('/login');
-    }
-  };
 
   return (
     <View className={headerClass} style={{ paddingTop: insets.top }}>
@@ -55,8 +34,7 @@ function TeacherHeader() {
           <Chip compact icon="account">
             {session?.name ?? 'Unknown'}
           </Chip>
-          <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
-          <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
+          <IconButton icon="cog" onPress={onOpenSettings} accessibilityLabel="Settings" />
         </View>
       </View>
 
@@ -67,7 +45,6 @@ function TeacherHeader() {
           </Chip>
         </View>
       ) : null}
-      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
     </View>
   );
 }
@@ -82,7 +59,8 @@ export default function TeacherTabsLayout() {
   const selectedGuild = useGuildStore(selectSelectedGuild);
   const setSelectedGuildId = useGuildStore((state) => state.setSelectedGuildId);
   const refreshGuilds = useGuildStore((state) => state.refreshGuilds);
-  const [pwModalVisible, setPwModalVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [usernameVisible, setUsernameVisible] = useState(false);
 
   useEffect(() => {
     if (!session || !isDesktop) return;
@@ -126,14 +104,14 @@ export default function TeacherTabsLayout() {
                 contextIcon="school"
                 userName={session?.name}
                 onLogout={onLogout}
-                onChangePassword={() => setPwModalVisible(true)}
+                onChangePassword={() => setSettingsVisible(true)}
               />
             )
           : undefined
       }
       screenOptions={{
         ...tabScreenOptions,
-        header: () => <TeacherHeader />,
+        header: () => <TeacherHeader onOpenSettings={() => setSettingsVisible(true)} />,
         headerShown: !isDesktop,
         tabBarPosition: isDesktop ? 'left' : 'bottom',
         tabBarStyle: isDesktop
@@ -175,7 +153,16 @@ export default function TeacherTabsLayout() {
         }}
         listeners={{ tabPress: requireGuild }}
       />
-      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
+      <SettingsMenuModal
+        visible={settingsVisible}
+        onDismiss={() => setSettingsVisible(false)}
+        onChangeUsername={() => setUsernameVisible(true)}
+        onLogout={onLogout}
+      />
+      <ChangeUsernameModal
+        visible={usernameVisible}
+        onDismiss={() => setUsernameVisible(false)}
+      />
     </Tabs>
   );
 }

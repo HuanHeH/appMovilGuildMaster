@@ -4,6 +4,8 @@ import { Icon, IconButton } from 'react-native-paper';
 
 import { AppSidebar } from '@/components/AppSidebar';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
+import { ChangeUsernameModal } from '@/components/ChangeUsernameModal';
+import { SettingsMenuModal } from '@/components/SettingsMenuModal';
 import { logout } from '@/lib/api';
 import { GM, tabScreenOptions } from '@/lib/guildmaster-theme';
 import { useIsDesktop } from '@/lib/use-is-desktop';
@@ -15,7 +17,8 @@ export default function AdminTabsLayout() {
   const session = useAuthStore((state) => state.session);
   const role = session?.role;
   const clearSession = useAuthStore((state) => state.clearSession);
-  const [pwModalVisible, setPwModalVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [usernameVisible, setUsernameVisible] = useState(false);
 
   const onLogout = async () => {
     try {
@@ -41,7 +44,7 @@ export default function AdminTabsLayout() {
                 brandTitle="Admin GuildMaster"
                 userName={session?.name}
                 onLogout={onLogout}
-                onChangePassword={() => setPwModalVisible(true)}
+                onChangePassword={() => setSettingsVisible(true)}
               />
             )
           : undefined
@@ -60,10 +63,11 @@ export default function AdminTabsLayout() {
             }
           : tabScreenOptions.tabBarStyle,
         headerRight: () => (
-          <>
-            <IconButton icon="lock-reset" onPress={() => setPwModalVisible(true)} accessibilityLabel="Change password" />
-            <IconButton icon="logout" onPress={onLogout} accessibilityLabel="Logout" />
-          </>
+          <IconButton
+            icon="cog"
+            onPress={() => setSettingsVisible(true)}
+            accessibilityLabel="Settings"
+          />
         ),
       }}>
       <Tabs.Screen
@@ -93,7 +97,16 @@ export default function AdminTabsLayout() {
           ),
         }}
       />
-      <ChangePasswordModal visible={pwModalVisible} onDismiss={() => setPwModalVisible(false)} />
+      <SettingsMenuModal
+        visible={settingsVisible}
+        onDismiss={() => setSettingsVisible(false)}
+        onChangeUsername={() => setUsernameVisible(true)}
+        onLogout={onLogout}
+      />
+      <ChangeUsernameModal
+        visible={usernameVisible}
+        onDismiss={() => setUsernameVisible(false)}
+      />
     </Tabs>
   );
 }

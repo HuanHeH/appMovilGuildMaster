@@ -64,12 +64,13 @@ export function DesktopListHeader({ columns, style, trailingWidth = 0 }: Desktop
 type DesktopListRowProps = {
   children: ReactNode;
   onPress?: () => void;
+  onLongPress?: () => void;
   selected?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 /** Wide horizontal row shell (spell-list style). */
-export function DesktopListRow({ children, onPress, selected, style }: DesktopListRowProps) {
+export function DesktopListRow({ children, onPress, onLongPress, selected, style }: DesktopListRowProps) {
   const body = (
     <View
       style={[
@@ -90,11 +91,12 @@ export function DesktopListRow({ children, onPress, selected, style }: DesktopLi
     </View>
   );
 
-  if (!onPress) return body;
+  if (!onPress && !onLongPress) return body;
 
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
       accessibilityRole="button">
       {body}
