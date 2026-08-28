@@ -15,11 +15,15 @@ export function SettingsMenuModal({
   visible,
   onDismiss,
   onChangeUsername,
+  onChangeUsernameLabel = 'Change username',
+  onChangeUsernameDescription = 'Edit how you appear in the app',
   onLogout,
 }: {
   visible: boolean;
   onDismiss: () => void;
   onChangeUsername: () => void;
+  onChangeUsernameLabel?: string;
+  onChangeUsernameDescription?: string;
   onLogout: () => void;
 }) {
   const theme = useTheme();
@@ -46,8 +50,8 @@ export function SettingsMenuModal({
         </Text>
         <Divider style={{ marginVertical: 4 }} />
         <List.Item
-          title="Change username"
-          description="Edit how you appear in the app"
+          title={onChangeUsernameLabel}
+          description={onChangeUsernameDescription}
           left={(props) => <List.Icon {...props} icon="account-edit" />}
           onPress={() => {
             onDismiss();
