@@ -129,7 +129,7 @@ export default function TeacherPartiesScreen() {
     try {
       setSubmitting(true);
       if (partyModalMode === 'create') {
-        await createParty({ name: trimmed, guildId: selectedGuildId });
+        await createParty({ name: trimmed, guild_id: selectedGuildId });
         setSnackbar('Party created.');
       } else if (editingParty) {
         await updateParty(editingParty.id, { name: trimmed });

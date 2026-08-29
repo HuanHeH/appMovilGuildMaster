@@ -90,7 +90,7 @@ export async function updateGuildName(id: number, name: string) {
   return data;
 }
 
-export async function createParty(party: { name: string; guildId: number }) {
+export async function createParty(party: { name: string; guild_id: number }) {
   const { data } = await api.post<Party>(API_ENDPOINTS.parties.create, party);
   return data;
 }

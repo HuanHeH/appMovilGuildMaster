@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Button, Divider, HelperText, Modal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Divider, HelperText, Modal, Portal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { apiErrorMessage, changeUserName } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
@@ -20,8 +20,10 @@ export function ChangeUsernameModal({
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (visible) {
       setName(session?.name ?? '');
       setSnackbar('');
@@ -59,12 +61,15 @@ export function ChangeUsernameModal({
     onDismiss();
   };
 
+  if (!mounted) return null;
+
   return (
     <>
-      <Modal
-        visible={visible}
-        onDismiss={handleClose}
-        contentContainerStyle={{
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={handleClose}
+          contentContainerStyle={{
             margin: 16,
             backgroundColor: theme.colors.surface,
             borderRadius: 12,
@@ -102,6 +107,7 @@ export function ChangeUsernameModal({
             </Button>
           </View>
         </Modal>
+      </Portal>
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
         {snackbar}
       </Snackbar>

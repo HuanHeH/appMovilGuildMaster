@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View } from 'react-native';
-import { Button, Divider, Modal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Divider, Modal, Portal, Snackbar, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { apiErrorMessage, changePassword } from '@/lib/api';
 
@@ -18,6 +18,9 @@ export function ChangePasswordModal({
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState('');
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const reset = () => {
     setOldPassword('');
@@ -65,20 +68,23 @@ export function ChangePasswordModal({
   const textMuted = theme.colors.onSurfaceVariant;
   const borderColor = theme.colors.outline;
 
+  if (!mounted) return null;
+
   return (
     <>
-      <Modal
-        visible={visible}
-        onDismiss={handleClose}
-        contentContainerStyle={{
-          margin: 16,
-          backgroundColor: bg,
-          borderRadius: 12,
-          padding: 20,
-          maxWidth: 420,
-          alignSelf: 'center',
-          width: '100%',
-        }}>
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={handleClose}
+          contentContainerStyle={{
+            margin: 16,
+            backgroundColor: bg,
+            borderRadius: 12,
+            padding: 20,
+            maxWidth: 420,
+            alignSelf: 'center',
+            width: '100%',
+          }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: textColor, marginBottom: 4 }}>
             Change Password
           </Text>
@@ -129,6 +135,7 @@ export function ChangePasswordModal({
             </Button>
           </View>
         </Modal>
+      </Portal>
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
         {snackbar}
       </Snackbar>

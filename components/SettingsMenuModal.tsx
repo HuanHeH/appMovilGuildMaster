@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import {
   Button,
   Divider,
   List,
   Modal,
+  Portal,
   Text,
   useTheme,
 } from 'react-native-paper';
@@ -28,61 +29,68 @@ export function SettingsMenuModal({
 }) {
   const theme = useTheme();
   const [pwOpen, setPwOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
 
   return (
     <>
-      <Modal
-        visible={visible}
-        onDismiss={onDismiss}
-        contentContainerStyle={{
-          margin: 16,
-          backgroundColor: theme.colors.surface,
-          borderRadius: 12,
-          padding: 8,
-          maxWidth: 420,
-          width: '100%',
-          alignSelf: 'center',
-        }}>
-        <Text
-          variant="titleMedium"
-          style={{ color: theme.colors.onSurface, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
-          Settings
-        </Text>
-        <Divider style={{ marginVertical: 4 }} />
-        {onChangeUsername ? (
+      <Portal>
+        <Modal
+          visible={visible}
+          onDismiss={onDismiss}
+          contentContainerStyle={{
+            margin: 16,
+            backgroundColor: theme.colors.surface,
+            borderRadius: 12,
+            padding: 8,
+            maxWidth: 420,
+            width: '100%',
+            alignSelf: 'center',
+          }}>
+          <Text
+            variant="titleMedium"
+            style={{ color: theme.colors.onSurface, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
+            Settings
+          </Text>
+          <Divider style={{ marginVertical: 4 }} />
+          {onChangeUsername ? (
+            <List.Item
+              title={onChangeUsernameLabel}
+              description={onChangeUsernameDescription}
+              left={(props) => <List.Icon {...props} icon="account-edit" />}
+              onPress={() => {
+                onDismiss();
+                setTimeout(() => onChangeUsername(), 200);
+              }}
+            />
+          ) : null}
           <List.Item
-            title={onChangeUsernameLabel}
-            description={onChangeUsernameDescription}
-            left={(props) => <List.Icon {...props} icon="account-edit" />}
+            title="Change password"
+            description="Change your account password"
+            left={(props) => <List.Icon {...props} icon="lock-reset" />}
             onPress={() => {
               onDismiss();
-              setTimeout(() => onChangeUsername(), 200);
+              setTimeout(() => setPwOpen(true), 200);
             }}
           />
-        ) : null}
-        <List.Item
-          title="Change password"
-          description="Change your account password"
-          left={(props) => <List.Icon {...props} icon="lock-reset" />}
-          onPress={() => {
-            onDismiss();
-            setTimeout(() => setPwOpen(true), 200);
-          }}
-        />
-        <Divider style={{ marginVertical: 4 }} />
-        <List.Item
-          title="Log out"
-          titleStyle={{ color: theme.colors.error }}
-          left={(props) => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
-          onPress={() => {
-            onDismiss();
-            setTimeout(() => onLogout(), 200);
-          }}
-        />
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 8 }}>
-          <Button onPress={onDismiss}>Close</Button>
-        </View>
-      </Modal>
+          <Divider style={{ marginVertical: 4 }} />
+          <List.Item
+            title="Log out"
+            titleStyle={{ color: theme.colors.error }}
+            left={(props) => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
+            onPress={() => {
+              onDismiss();
+              setTimeout(() => onLogout(), 200);
+            }}
+          />
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 8 }}>
+            <Button onPress={onDismiss}>Close</Button>
+          </View>
+        </Modal>
+      </Portal>
       <ChangePasswordModal visible={pwOpen} onDismiss={() => setPwOpen(false)} />
     </>
   );
