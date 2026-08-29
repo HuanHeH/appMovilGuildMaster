@@ -5,7 +5,6 @@ import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSidebar } from '@/components/AppSidebar';
-import { RenameCharacterModal } from '@/components/RenameCharacterModal';
 import { SettingsMenuModal } from '@/components/SettingsMenuModal';
 import { logout } from '@/lib/api';
 import { showAlert } from '@/lib/alert';
@@ -64,7 +63,6 @@ export default function StudentTabsLayout() {
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [characterVisible, setCharacterVisible] = useState(false);
 
   const requireCharacter = (e: { preventDefault: () => void }) => {
     if (!selectedCharacterId) {
@@ -158,14 +156,7 @@ export default function StudentTabsLayout() {
       <SettingsMenuModal
         visible={settingsVisible}
         onDismiss={() => setSettingsVisible(false)}
-        onChangeUsername={() => setCharacterVisible(true)}
-        onChangeUsernameLabel="Rename character"
-        onChangeUsernameDescription="Edit your selected character's name"
         onLogout={onLogout}
-      />
-      <RenameCharacterModal
-        visible={characterVisible}
-        onDismiss={() => setCharacterVisible(false)}
       />
     </View>
   );

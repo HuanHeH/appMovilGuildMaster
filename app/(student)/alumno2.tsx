@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
+  Card,
   Chip,
   Divider,
   Icon,
@@ -28,6 +29,7 @@ import {
   getCharacters,
   getParties,
   getSkills,
+  setCharacterJob,
 } from '@/lib/api';
 import { showConfirm } from '@/lib/alert';
 import {
@@ -142,6 +144,8 @@ export default function SkillsScreen() {
   const [partyQuery, setPartyQuery] = useState('');
   const [changeJobTarget, setChangeJobTarget] = useState<CharacterJob | null>(null);
   const [jobMenuVisible, setJobMenuVisible] = useState(false);
+  const [choosingJob, setChoosingJob] = useState<CharacterJob | null>(null);
+  const [jobSelectSubmitting, setJobSelectSubmitting] = useState(false);
   const [expandedLevels, setExpandedLevels] = useState<Record<(typeof LEVEL_SECTIONS)[number], boolean>>({
     1: true,
     2: false,
@@ -234,9 +238,23 @@ export default function SkillsScreen() {
   }, [partyQuery, guildParties]);
 
   const otherJobs = useMemo(() => {
-    if (!selectedCharacter) return JOBS;
+    if (!selectedCharacter || !selectedCharacter.job) return JOBS;
     return JOBS.filter((job) => job !== selectedCharacter.job);
   }, [selectedCharacter]);
+
+  const chooseJob = async (job: CharacterJob) => {
+    if (!selectedCharacter) return;
+    try {
+      setJobSelectSubmitting(true);
+      await setCharacterJob(selectedCharacter.id, job);
+      await refreshCharacters();
+      setSnackbar(`You are now a ${job}!`);
+    } catch (error) {
+      setSnackbar(apiErrorMessage(error, 'Could not set your class.'));
+    } finally {
+      setJobSelectSubmitting(false);
+    }
+  };
 
   const openUseSkillFlow = (skill: Skill) => {
     if (!selectedCharacter) return;
@@ -356,6 +374,70 @@ export default function SkillsScreen() {
     return (
       <View className={screenPadClass}>
         <Text>Select a character in Profile first.</Text>
+      </View>
+    );
+  }
+
+  if (!selectedCharacter.job) {
+    const JOB_INFO: Record<CharacterJob, { icon: string; color: string; desc: string; skills: string[] }> = {
+      Mage: {
+        icon: 'fire',
+        color: '#3b82f6',
+        desc: 'Spellcaster who deals magical damage to enemies.',
+        skills: ['Fireball — Deal damage to a single target', 'More skills unlock as you level up'],
+      },
+      Rogue: {
+        icon: 'knife',
+        color: '#22c55e',
+        desc: 'Stealthy attacker who excels at quick strikes.',
+        skills: ['Stealth-based abilities', 'More skills unlock as you level up'],
+      },
+      Paladin: {
+        icon: 'shield',
+        color: '#eab308',
+        desc: 'Holy warrior who combines defense and healing.',
+        skills: ['Defensive abilities', 'More skills unlock as you level up'],
+      },
+    };
+    return (
+      <View className={screenClass}>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} style={{ flex: 1 }}>
+          <Text variant="titleMedium" style={{ color: GM.primary, fontWeight: '700' }}>Choose your class</Text>
+          <Text style={{ color: GM.onSurfaceVariant }}>
+            Your character <Text style={{ fontWeight: '700' }}>{selectedCharacter.name}</Text> doesn't have a class yet.
+            Pick one below to start using skills.
+          </Text>
+          {JOBS.map((job) => {
+            const info = JOB_INFO[job];
+            return (
+              <Card key={job} mode="outlined" style={{ borderColor: info.color, borderWidth: 1 }}>
+                <Card.Content style={{ gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Icon source={info.icon} size={28} color={info.color} />
+                    <Text variant="titleMedium" style={{ fontWeight: '700', color: info.color }}>{job}</Text>
+                  </View>
+                  <Text style={{ color: GM.onSurface }}>{info.desc}</Text>
+                  <Text style={{ color: GM.tertiary, fontSize: 13, fontWeight: '600' }}>Abilities:</Text>
+                  {info.skills.map((skill, i) => (
+                    <Text key={i} style={{ color: GM.onSurfaceVariant, fontSize: 13 }}>• {skill}</Text>
+                  ))}
+                  <Button
+                    mode="contained"
+                    buttonColor={info.color}
+                    style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                    loading={jobSelectSubmitting}
+                    disabled={jobSelectSubmitting}
+                    onPress={() => chooseJob(job)}>
+                    Choose {job}
+                  </Button>
+                </Card.Content>
+              </Card>
+            );
+          })}
+        </ScrollView>
+        <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
+          {snackbar}
+        </Snackbar>
       </View>
     );
   }

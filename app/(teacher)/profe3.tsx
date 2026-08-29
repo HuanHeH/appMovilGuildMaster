@@ -5,18 +5,14 @@ import {
   ActivityIndicator,
   Button,
   Card,
-  Checkbox,
   Chip,
   Divider,
   Icon,
-  IconButton,
-  List,
   Modal,
   Portal,
   Snackbar,
   Text,
   TextInput,
-  TouchableRipple,
 } from 'react-native-paper';
 
 import { EventCommentChip } from '@/components/EventCommentChip';
@@ -42,17 +38,13 @@ import {
 } from '@/lib/guildmaster-theme';
 import {
   apiErrorMessage,
-  createParty,
-  deleteParty,
   getCharacters,
   getEvents,
   getGuilds,
   getParties,
   getSkills,
   getUsers,
-  updateCharacterParty,
   updateEvent,
-  updateParty,
 } from '@/lib/api';
 import { useIsDesktop } from '@/lib/use-is-desktop';
 import { useAuthStore } from '@/store/auth-store';
@@ -211,33 +203,6 @@ export default function TeacherEventsScreen() {
   >(null);
   const reviewBusy = reviewSubmittingAction != null;
   const [snackbar, setSnackbar] = useState('');
-
-  // Party management state
-  const [partyModalVisible, setPartyModalVisible] = useState(false);
-  const [partyModalMode, setPartyModalMode] = useState<'create' | 'rename'>('create');
-  const [editingParty, setEditingParty] = useState<Party | null>(null);
-  const [partyName, setPartyName] = useState('');
-  const [partySubmitting, setPartySubmitting] = useState(false);
-  const [partyExpanded, setPartyExpanded] = useState(false);
-  const [assignModalVisible, setAssignModalVisible] = useState(false);
-  const [assignPartyId, setAssignPartyId] = useState<number | null>(null);
-  const [assignCharacterIds, setAssignCharacterIds] = useState<number[]>([]);
-
-  const reloadGuildData = useCallback(async () => {
-    if (!selectedGuildId) return;
-    const [chars, partiesData] = await Promise.all([
-      getCharacters(selectedGuildId),
-      getParties(selectedGuildId),
-    ]);
-    setAllVisibleCharacters(chars);
-    setParties(partiesData);
-  }, [selectedGuildId]);
-
-  const reloadParties = useCallback(async () => {
-    if (!selectedGuildId) return;
-    const partiesData = await getParties(selectedGuildId);
-    setParties(partiesData);
-  }, [selectedGuildId]);
 
   const reloadEvents = useCallback(async () => {
     if (!selectedGuildId) return;
@@ -432,92 +397,6 @@ export default function TeacherEventsScreen() {
         }
       }
     );
-  };
-
-  // --- Party management ---
-  const openCreateParty = () => {
-    setPartyModalMode('create');
-    setEditingParty(null);
-    setPartyName('');
-    setPartyModalVisible(true);
-  };
-  const openRenameParty = (party: Party) => {
-    setPartyModalMode('rename');
-    setEditingParty(party);
-    setPartyName(party.name);
-    setPartyModalVisible(true);
-  };
-  const submitParty = async () => {
-    if (!selectedGuildId) return;
-    const trimmed = partyName.trim();
-    if (!trimmed) {
-      setSnackbar('Party name is required.');
-      return;
-    }
-    try {
-      setPartySubmitting(true);
-      if (partyModalMode === 'create') {
-        await createParty({ name: trimmed, guildId: selectedGuildId });
-        setSnackbar('Party created.');
-      } else if (editingParty) {
-        await updateParty(editingParty.id, { name: trimmed });
-        setSnackbar('Party renamed.');
-      }
-      setPartyModalVisible(false);
-      await reloadParties();
-    } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not save party.'));
-    } finally {
-      setPartySubmitting(false);
-    }
-  };
-  const handleDeleteParty = (party: Party) => {
-    showConfirm('Delete party', `Delete "${party.name}"? Characters in this party will be unassigned.`, async () => {
-      try {
-        await deleteParty(party.id);
-        setSnackbar('Party deleted.');
-        await reloadParties();
-        await reloadGuildData();
-      } catch (error) {
-        setSnackbar(apiErrorMessage(error, 'Could not delete party.'));
-      }
-    });
-  };
-  const openAssignCharacters = (partyId: number) => {
-    setAssignPartyId(partyId);
-    const assigned = allVisibleCharacters
-      .filter((c) => c.party_id === partyId)
-      .map((c) => c.id);
-    setAssignCharacterIds(assigned);
-    setAssignModalVisible(true);
-  };
-  const toggleAssignCharacter = (id: number) => {
-    setAssignCharacterIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-  const submitAssignCharacters = async () => {
-    if (assignPartyId === null) return;
-    try {
-      setPartySubmitting(true);
-      const current = allVisibleCharacters.filter((c) => c.party_id === assignPartyId).map((c) => c.id);
-      const toRemove = current.filter((id) => !assignCharacterIds.includes(id));
-      const toAdd = assignCharacterIds.filter((id) => !current.includes(id));
-      for (const id of toRemove) {
-        await updateCharacterParty(id, null);
-      }
-      for (const id of toAdd) {
-        await updateCharacterParty(id, assignPartyId);
-      }
-      setAssignModalVisible(false);
-      await reloadParties();
-      await reloadGuildData();
-      setSnackbar('Party characters updated.');
-    } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not update party characters.'));
-    } finally {
-      setPartySubmitting(false);
-    }
   };
 
   if (!selectedGuildId) return <Redirect href="/(teacher)/profe1" />;
@@ -907,71 +786,6 @@ export default function TeacherEventsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, gap: 8 }}
         keyboardShouldPersistTaps="handled">
-        <Card mode="outlined">
-          <Pressable
-            onPress={() => setPartyExpanded(!partyExpanded)}
-            android_ripple={{ color: GM.surfaceElevated }}
-            style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}>
-            <View className="gm-filters-header">
-              <Icon source="account-group" size={22} color={GM.primary} />
-              <Text className="flex-1 text-base font-bold gm-text-on-bg">
-                Parties ({parties.length})
-              </Text>
-              <Button compact mode="contained" onPress={openCreateParty} icon="plus" style={{ marginRight: 8 }}>
-                New
-              </Button>
-              <Icon
-                source={partyExpanded ? 'chevron-up' : 'chevron-down'}
-                size={22}
-                color={GM.tertiary}
-              />
-            </View>
-          </Pressable>
-          {partyExpanded ? (
-            <Card.Content style={{ paddingTop: 0, paddingBottom: 12, gap: 8 }}>
-              {!parties.length ? (
-                <Text style={{ color: GM.tertiary }}>No parties yet. Create one to get started.</Text>
-              ) : (
-                parties.map((party) => {
-                  const members = allVisibleCharacters.filter((c) => c.party_id === party.id);
-                  return (
-                    <Card key={party.id} mode="outlined" style={{ backgroundColor: GM.surfaceContainer }}>
-                      <List.Item
-                        title={party.name}
-                        description={`${members.length} character${members.length === 1 ? '' : 's'}`}
-                        left={(props) => <List.Icon {...props} icon="account-group" color={GM.primary} />}
-                        right={() => (
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <IconButton
-                              icon="account-plus"
-                              size={20}
-                              onPress={() => openAssignCharacters(party.id)}
-                              accessibilityLabel="Assign characters"
-                            />
-                            <IconButton
-                              icon="pencil"
-                              size={20}
-                              onPress={() => openRenameParty(party)}
-                              accessibilityLabel="Rename party"
-                            />
-                            <IconButton
-                              icon="delete"
-                              size={20}
-                              iconColor={GM.error}
-                              onPress={() => handleDeleteParty(party)}
-                              accessibilityLabel="Delete party"
-                            />
-                          </View>
-                        )}
-                      />
-                    </Card>
-                  );
-                })
-              )}
-            </Card.Content>
-          ) : null}
-        </Card>
-
         <Card mode="outlined" className={filtersCardClass}>
           <Pressable
             onPress={toggleFiltersExpanded}
@@ -1167,75 +981,6 @@ export default function TeacherEventsScreen() {
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3000}>
         {snackbar}
       </Snackbar>
-
-      {/* Party create/rename modal */}
-      <Portal>
-        <Modal
-          visible={partyModalVisible}
-          onDismiss={() => setPartyModalVisible(false)}
-          contentContainerStyle={modalContentStyle}>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Text variant="titleMedium" style={{ marginBottom: 10 }}>
-              {partyModalMode === 'create' ? 'Create party' : 'Rename party'}
-            </Text>
-            <Divider style={{ marginBottom: 12 }} />
-            <TextInput
-              mode="outlined"
-              label="Party name"
-              value={partyName}
-              onChangeText={setPartyName}
-              maxLength={80}
-            />
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-              <Button onPress={() => setPartyModalVisible(false)}>Cancel</Button>
-              <Button mode="contained" loading={partySubmitting} disabled={partySubmitting} onPress={submitParty}>
-                {partyModalMode === 'create' ? 'Create' : 'Save'}
-              </Button>
-            </View>
-          </ScrollView>
-        </Modal>
-      </Portal>
-
-      {/* Assign characters modal */}
-      <Portal>
-        <Modal
-          visible={assignModalVisible}
-          onDismiss={() => setAssignModalVisible(false)}
-          contentContainerStyle={modalContentStyle}>
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Text variant="titleMedium" style={{ marginBottom: 10 }}>
-              Assign characters
-            </Text>
-            <Text style={{ color: GM.onSurfaceVariant, marginBottom: 12 }}>
-              Select which characters belong to this party.
-            </Text>
-            <Divider style={{ marginBottom: 8 }} />
-            {!allVisibleCharacters.length ? (
-              <Text style={{ color: GM.tertiary }}>No characters in this guild yet.</Text>
-            ) : (
-              allVisibleCharacters.map((character) => {
-                const checked = assignCharacterIds.includes(character.id);
-                const owner = userById.get(character.user_id)?.name ?? 'Unknown';
-                return (
-                  <Checkbox.Item
-                    key={character.id}
-                    label={`${character.name} (${owner})`}
-                    status={checked ? 'checked' : 'unchecked'}
-                    onPress={() => toggleAssignCharacter(character.id)}
-                    position="leading"
-                  />
-                );
-              })
-            )}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-              <Button onPress={() => setAssignModalVisible(false)}>Cancel</Button>
-              <Button mode="contained" loading={partySubmitting} disabled={partySubmitting} onPress={submitAssignCharacters}>
-                Save
-              </Button>
-            </View>
-          </ScrollView>
-        </Modal>
-      </Portal>
     </View>
   );
 }

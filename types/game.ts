@@ -21,7 +21,7 @@ export interface Party {
 export interface Character {
   id: number;
   name: string;
-  job: CharacterJob;
+  job: CharacterJob | null;
   level: number;
   exp: number;
   user_id: number;
@@ -100,6 +100,10 @@ export function isDebuffSkill(skill: Skill | undefined | null): boolean {
 
 export function isChangeJobSkill(skill: Skill) {
   return skill.name.toLowerCase().includes('change job');
+}
+
+export function isChooseClassSkill(skill: Skill) {
+  return skill.name.toLowerCase().includes('choose class');
 }
 
 export function isLevelUpSkill(skill: Skill) {

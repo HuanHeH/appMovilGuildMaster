@@ -21,7 +21,7 @@ export function SettingsMenuModal({
 }: {
   visible: boolean;
   onDismiss: () => void;
-  onChangeUsername: () => void;
+  onChangeUsername?: () => void;
   onChangeUsernameLabel?: string;
   onChangeUsernameDescription?: string;
   onLogout: () => void;
@@ -49,15 +49,17 @@ export function SettingsMenuModal({
           Settings
         </Text>
         <Divider style={{ marginVertical: 4 }} />
-        <List.Item
-          title={onChangeUsernameLabel}
-          description={onChangeUsernameDescription}
-          left={(props) => <List.Icon {...props} icon="account-edit" />}
-          onPress={() => {
-            onDismiss();
-            setTimeout(() => onChangeUsername(), 200);
-          }}
-        />
+        {onChangeUsername ? (
+          <List.Item
+            title={onChangeUsernameLabel}
+            description={onChangeUsernameDescription}
+            left={(props) => <List.Icon {...props} icon="account-edit" />}
+            onPress={() => {
+              onDismiss();
+              setTimeout(() => onChangeUsername(), 200);
+            }}
+          />
+        ) : null}
         <List.Item
           title="Change password"
           description="Change your account password"

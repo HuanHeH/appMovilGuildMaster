@@ -154,6 +154,26 @@ export default function TeacherTabsLayout() {
           }}
           listeners={{ tabPress: requireGuild }}
         />
+        <Tabs.Screen
+          name="profe4"
+          options={{
+            title: 'Parties',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="account-group" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireGuild }}
+        />
+        <Tabs.Screen
+          name="profe5"
+          options={{
+            title: 'Characters',
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="account" color={String(color)} size={size} />
+            ),
+          }}
+          listeners={{ tabPress: requireGuild }}
+        />
       </Tabs>
       <SettingsMenuModal
         visible={settingsVisible}

@@ -112,6 +112,22 @@ export async function updateCharacterParty(characterId: number, partyId: number 
   return data;
 }
 
+export async function updateCharacterName(characterId: number, name: string) {
+  const { data } = await api.put<Character>(
+    API_ENDPOINTS.characters.update(characterId),
+    { name }
+  );
+  return data;
+}
+
+export async function setCharacterJob(characterId: number, job: string) {
+  const { data } = await api.put<Character>(
+    API_ENDPOINTS.characters.update(characterId),
+    { job }
+  );
+  return data;
+}
+
 export async function getCharacters(guildId: number) {
   const { data } = await api.get<Character[]>(API_ENDPOINTS.characters.list, {
     params: { guild_id: guildId },

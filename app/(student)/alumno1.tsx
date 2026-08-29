@@ -1,7 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { ActivityIndicator, Card, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
+import { ActivityIndicator, Card, IconButton, List, Snackbar, Text, TouchableRipple } from 'react-native-paper';
 
 import {
   DesktopCell,
@@ -9,6 +9,7 @@ import {
   DesktopListHeader,
   DesktopListRow,
 } from '@/components/DesktopListRow';
+import { RenameCharacterModal } from '@/components/RenameCharacterModal';
 import { getGuilds } from '@/lib/api';
 import { centerScreenClass, GM, screenClass, selectedRowClass } from '@/lib/guildmaster-theme';
 import { useIsDesktop } from '@/lib/use-is-desktop';
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState('');
+  const [renameVisible, setRenameVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,7 +65,7 @@ export default function ProfileScreen() {
 
   const selectedLabel = useMemo(() => {
     if (!selectedCharacter) return 'No character selected yet.';
-    return `Active: ${selectedCharacter.name} (${selectedCharacter.job} Lv.${selectedCharacter.level}, EXP ${selectedCharacter.exp}).`;
+    return `Active: ${selectedCharacter.name} (${selectedCharacter.job ?? 'No class'} Lv.${selectedCharacter.level}, EXP ${selectedCharacter.exp}).`;
   }, [selectedCharacter]);
 
   if (loading && !characters.length) {
@@ -94,7 +96,17 @@ export default function ProfileScreen() {
 
         <Card mode="contained">
           <Card.Content style={{ gap: 8 }}>
-            <Text variant="titleMedium">Your characters</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="titleMedium">Your characters</Text>
+              {selectedCharacter ? (
+                <IconButton
+                  icon="pencil"
+                  size={20}
+                  onPress={() => setRenameVisible(true)}
+                  accessibilityLabel="Rename character"
+                />
+              ) : null}
+            </View>
             <Text>{selectedLabel}</Text>
 
             {!characters.length ? (
@@ -118,7 +130,7 @@ export default function ProfileScreen() {
                         />
                       </DesktopCell>
                       <DesktopCell flex={0.9}>
-                        <DesktopCellText primary={character.job} />
+                        <DesktopCellText primary={character.job ?? 'No class'} />
                       </DesktopCell>
                       <DesktopCell flex={0.55} minWidth={64}>
                         <DesktopCellText primary={`Lv.${character.level}`} />
@@ -144,7 +156,7 @@ export default function ProfileScreen() {
                     className={selectedRowClass(selected)}>
                     <List.Item
                       title={character.name}
-                      description={`${character.job} | Lv.${character.level} | EXP ${character.exp}\n${guildLabel(guild)}`}
+                      description={`${character.job ?? 'No class'} | Lv.${character.level} | EXP ${character.exp}\n${guildLabel(guild)}`}
                       titleStyle={selected ? { color: GM.selectedText } : undefined}
                       left={(props) => (
                         <List.Icon
@@ -165,6 +177,11 @@ export default function ProfileScreen() {
       <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={2500}>
         {snackbar}
       </Snackbar>
+
+      <RenameCharacterModal
+        visible={renameVisible}
+        onDismiss={() => setRenameVisible(false)}
+      />
     </View>
   );
 }
