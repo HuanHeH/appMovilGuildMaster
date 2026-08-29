@@ -58,6 +58,7 @@ export function ChangePasswordModal({
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setTimeout(() => handleClose(), 1500);
     } catch (error) {
       showSnackbar(apiErrorMessage(error, 'Could not change password.'));
     } finally {

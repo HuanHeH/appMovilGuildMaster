@@ -136,7 +136,7 @@ export default function TeacherCharactersScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className={screenClass} style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
         <Text variant="titleMedium" style={{ color: GM.primary, fontWeight: '700' }}>
           Characters ({characters.length})

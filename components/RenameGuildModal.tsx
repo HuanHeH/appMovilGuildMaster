@@ -52,7 +52,8 @@ export function RenameGuildModal({
       setSubmitting(true);
       await updateGuildName(guildId, trimmed);
       onRenamed(trimmed);
-      onDismiss();
+      showSnackbar('Guild renamed successfully.');
+      setTimeout(() => onDismiss(), 1500);
     } catch (error) {
       showSnackbar(apiErrorMessage(error, 'Could not rename guild.'));
     } finally {

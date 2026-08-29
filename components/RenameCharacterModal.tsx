@@ -56,6 +56,7 @@ export function RenameCharacterModal({
       setCharacters(characters.map((c) => (c.id === data.id ? data : c)));
       setSuccess(true);
       showSnackbar('Character renamed successfully.');
+      setTimeout(() => onDismiss(), 1500);
     } catch (error) {
       showSnackbar(apiErrorMessage(error, 'Could not rename character.'));
     } finally {

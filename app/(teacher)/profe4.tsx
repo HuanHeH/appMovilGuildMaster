@@ -190,7 +190,7 @@ export default function TeacherPartiesScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className={screenClass} style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text variant="titleMedium" style={{ color: GM.primary, fontWeight: '700' }}>Parties</Text>

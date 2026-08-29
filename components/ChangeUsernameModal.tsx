@@ -53,6 +53,7 @@ export function ChangeUsernameModal({
       setSession({ ...session!, name: updated.name });
       setSuccess(true);
       showSnackbar('Username updated successfully.');
+      setTimeout(() => onDismiss(), 1500);
     } catch (error) {
       showSnackbar(apiErrorMessage(error, 'Could not update username.'));
     } finally {
