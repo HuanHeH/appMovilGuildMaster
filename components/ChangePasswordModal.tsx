@@ -16,43 +16,50 @@ export function ChangePasswordModal({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   const [success, setSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
+  const showSnackbar = (msg: string) => {
+    setSnackbarMsg(msg);
+    setSnackbarVisible(true);
+  };
+
   const reset = () => {
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setSnackbar('');
+    setSnackbarVisible(false);
+    setSnackbarMsg('');
     setSuccess(false);
   };
 
   const onSubmit = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      setSnackbar('All fields are required.');
+      showSnackbar('All fields are required.');
       return;
     }
     if (newPassword.length < 4) {
-      setSnackbar('New password must be at least 4 characters.');
+      showSnackbar('New password must be at least 4 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setSnackbar('New password and confirmation do not match.');
+      showSnackbar('New password and confirmation do not match.');
       return;
     }
     try {
       setSubmitting(true);
       await changePassword(oldPassword, newPassword, confirmPassword);
       setSuccess(true);
-      setSnackbar('Password changed successfully.');
+      showSnackbar('Password changed successfully.');
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not change password.'));
+      showSnackbar(apiErrorMessage(error, 'Could not change password.'));
     } finally {
       setSubmitting(false);
     }
@@ -136,9 +143,16 @@ export function ChangePasswordModal({
           </View>
         </Modal>
       </Portal>
-      <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
-        {snackbar}
-      </Snackbar>
+      {snackbarVisible ? (
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}>
+            {snackbarMsg}
+          </Snackbar>
+        </Portal>
+      ) : null}
     </>
   );
 }

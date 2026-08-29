@@ -20,7 +20,8 @@ export function RenameCharacterModal({
 
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   const [success, setSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -28,16 +29,21 @@ export function RenameCharacterModal({
     setMounted(true);
     if (visible && selectedCharacter) {
       setName(selectedCharacter.name);
-      setSnackbar('');
+      setSnackbarVisible(false);
       setSuccess(false);
     }
   }, [visible, selectedCharacter?.name]);
+
+  const showSnackbar = (msg: string) => {
+    setSnackbarMsg(msg);
+    setSnackbarVisible(true);
+  };
 
   const onSubmit = async () => {
     if (!selectedCharacter) return;
     const trimmed = name.trim();
     if (!trimmed) {
-      setSnackbar('Name is required.');
+      showSnackbar('Name is required.');
       return;
     }
     if (trimmed === selectedCharacter.name) {
@@ -49,9 +55,9 @@ export function RenameCharacterModal({
       const { data } = await api.put(API_ENDPOINTS.characters.update(selectedCharacter.id), { name: trimmed });
       setCharacters(characters.map((c) => (c.id === data.id ? data : c)));
       setSuccess(true);
-      setSnackbar('Character renamed successfully.');
+      showSnackbar('Character renamed successfully.');
     } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not rename character.'));
+      showSnackbar(apiErrorMessage(error, 'Could not rename character.'));
     } finally {
       setSubmitting(false);
     }
@@ -59,7 +65,7 @@ export function RenameCharacterModal({
 
   const handleClose = () => {
     setName('');
-    setSnackbar('');
+    setSnackbarVisible(false);
     setSuccess(false);
     onDismiss();
   };
@@ -116,9 +122,16 @@ export function RenameCharacterModal({
           </View>
         </Modal>
       </Portal>
-      <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
-        {snackbar}
-      </Snackbar>
+      {snackbarVisible ? (
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}>
+            {snackbarMsg}
+          </Snackbar>
+        </Portal>
+      ) : null}
     </>
   );
 }

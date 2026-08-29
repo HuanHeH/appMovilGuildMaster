@@ -74,7 +74,11 @@ export async function logout() {
 }
 
 export async function changePassword(oldPassword: string, newPassword: string, confirmPassword: string) {
-  await api.post(API_ENDPOINTS.users.changePassword, { oldPassword, newPassword, confirmPassword });
+  await api.post(API_ENDPOINTS.users.changePassword, {
+    old_password: oldPassword,
+    new_password: newPassword,
+    confirm_password: confirmPassword,
+  });
 }
 
 export async function changeUserName(id: number, name: string) {

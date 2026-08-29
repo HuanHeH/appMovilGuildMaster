@@ -20,21 +20,27 @@ export function RenameGuildModal({
   const theme = useTheme();
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     if (visible) {
       setName(guildName);
-      setSnackbar('');
+      setSnackbarVisible(false);
     }
   }, [visible, guildName]);
+
+  const showSnackbar = (msg: string) => {
+    setSnackbarMsg(msg);
+    setSnackbarVisible(true);
+  };
 
   const onSubmit = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setSnackbar('Name is required.');
+      showSnackbar('Name is required.');
       return;
     }
     if (guildId === null) return;
@@ -48,7 +54,7 @@ export function RenameGuildModal({
       onRenamed(trimmed);
       onDismiss();
     } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not rename guild.'));
+      showSnackbar(apiErrorMessage(error, 'Could not rename guild.'));
     } finally {
       setSubmitting(false);
     }
@@ -100,9 +106,16 @@ export function RenameGuildModal({
           </View>
         </Modal>
       </Portal>
-      <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
-        {snackbar}
-      </Snackbar>
+      {snackbarVisible ? (
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}>
+            {snackbarMsg}
+          </Snackbar>
+        </Portal>
+      ) : null}
     </>
   );
 }

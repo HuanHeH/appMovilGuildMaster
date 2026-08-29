@@ -18,7 +18,8 @@ export function ChangeUsernameModal({
 
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   const [success, setSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -26,19 +27,24 @@ export function ChangeUsernameModal({
     setMounted(true);
     if (visible) {
       setName(session?.name ?? '');
-      setSnackbar('');
+      setSnackbarVisible(false);
       setSuccess(false);
     }
   }, [visible, session?.name]);
 
+  const showSnackbar = (msg: string) => {
+    setSnackbarMsg(msg);
+    setSnackbarVisible(true);
+  };
+
   const onSubmit = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setSnackbar('Name is required.');
+      showSnackbar('Name is required.');
       return;
     }
     if (session && trimmed === session.name) {
-      setSnackbar('Name is the same as the current one.');
+      showSnackbar('Name is the same as the current one.');
       return;
     }
     try {
@@ -46,9 +52,9 @@ export function ChangeUsernameModal({
       const updated = await changeUserName(session!.id, trimmed);
       setSession({ ...session!, name: updated.name });
       setSuccess(true);
-      setSnackbar('Username updated successfully.');
+      showSnackbar('Username updated successfully.');
     } catch (error) {
-      setSnackbar(apiErrorMessage(error, 'Could not update username.'));
+      showSnackbar(apiErrorMessage(error, 'Could not update username.'));
     } finally {
       setSubmitting(false);
     }
@@ -56,7 +62,7 @@ export function ChangeUsernameModal({
 
   const handleClose = () => {
     setName('');
-    setSnackbar('');
+    setSnackbarVisible(false);
     setSuccess(false);
     onDismiss();
   };
@@ -108,9 +114,16 @@ export function ChangeUsernameModal({
           </View>
         </Modal>
       </Portal>
-      <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
-        {snackbar}
-      </Snackbar>
+      {snackbarVisible ? (
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}>
+            {snackbarMsg}
+          </Snackbar>
+        </Portal>
+      ) : null}
     </>
   );
 }
