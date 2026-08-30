@@ -76,6 +76,34 @@ function isTeacherExpEvent(event: GameEvent, skill: Skill | undefined): boolean 
   return event.caster_character_id == null && isExpDeltaComment(event.comment);
 }
 
+/** Student Events tab: active character launched, was targeted, or is hit by party/guild AOE — but not a sibling's personal events. */
+export function isStudentEventVisibleForCharacter(
+  event: GameEvent,
+  active: Character,
+  skill: Skill | undefined,
+  myCharacterIds: ReadonlySet<number>
+): boolean {
+  const casterId = event.caster_character_id;
+  const targetId = event.target_character_id;
+
+  if (casterId === active.id || targetId === active.id) return true;
+
+  const partyAffectsActive =
+    active.party_id != null && event.target_party_id === active.party_id;
+  const guildAffectsActive =
+    event.guild_id === active.guild_id &&
+    targetId == null &&
+    event.target_party_id == null &&
+    (skill?.aoe === 'GUILD' || isTeacherExpEvent(event, skill));
+
+  if (!partyAffectsActive && !guildAffectsActive) return false;
+
+  if (casterId != null && myCharacterIds.has(casterId) && casterId !== active.id) return false;
+  if (targetId != null && myCharacterIds.has(targetId) && targetId !== active.id) return false;
+
+  return true;
+}
+
 function parseChangeJobTarget(comment: string | null | undefined): string | null {
   if (!comment) return null;
   const match = comment.match(/Change Job to\s+(\w+)/i);

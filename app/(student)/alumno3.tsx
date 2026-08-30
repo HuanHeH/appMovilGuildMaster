@@ -12,7 +12,7 @@ import {
 } from '@/components/DesktopListRow';
 import { getCharacters, getEvents, getGuilds, getParties, getSkills, getUsers, deleteEvent, apiErrorMessage } from '@/lib/api';
 import { showConfirm } from '@/lib/alert';
-import { eventMatchesSearch } from '@/lib/event-search';
+import { eventMatchesSearch, isStudentEventVisibleForCharacter } from '@/lib/event-search';
 import {
   centerScreenClass,
   eventReviewChipColors,
@@ -162,6 +162,7 @@ export default function EventsScreen() {
   const selectedCharacterId = useCharacterStore((state) => state.selectedCharacterId);
   const refreshCharacters = useCharacterStore((state) => state.refreshCharacters);
   const selectedCharacter = useCharacterStore(selectSelectedCharacter);
+  const myCharacters = useCharacterStore((state) => state.characters);
 
   const [allVisibleCharacters, setAllVisibleCharacters] = useState<Character[]>([]);
   const [events, setEvents] = useState<GameEvent[]>([]);
@@ -237,24 +238,21 @@ export default function EventsScreen() {
   const skillById = useMemo(() => new Map(skills.map((s) => [s.id, s])), [skills]);
   const partyById = useMemo(() => new Map(parties.map((p) => [p.id, p])), [parties]);
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+  const myCharacterIds = useMemo(
+    () => new Set(myCharacters.map((character) => character.id)),
+    [myCharacters]
+  );
 
   const filteredEvents = useMemo(() => {
     const filtered = events.filter((event) => {
-      const launched =
-        selectedCharacter != null && event.caster_character_id === selectedCharacter.id;
-      const affectedByCharacter = event.target_character_id === selectedCharacter?.id;
-      const affectedByParty =
-        selectedCharacter?.party_id != null && event.target_party_id === selectedCharacter.party_id;
+      if (!selectedCharacter) return false;
       const skill = skillById.get(event.skill_id);
-      const teacherExp = isTeacherExpEvent(event, skill);
-      const affectedByGuild =
-        selectedCharacter != null &&
-        event.guild_id === selectedCharacter.guild_id &&
-        event.target_character_id === null &&
-        event.target_party_id === null &&
-        (skill?.aoe === 'GUILD' || teacherExp);
-      const affected = affectedByCharacter || affectedByParty || affectedByGuild;
-      if (!launched && !affected) return false;
+      if (!isStudentEventVisibleForCharacter(event, selectedCharacter, skill, myCharacterIds)) {
+        return false;
+      }
+
+      const launched = event.caster_character_id === selectedCharacter.id;
+      const affected = !launched;
       const kindAllowed =
         kindFilters.length === 0 ||
         (launched && kindFilters.includes('LAUNCHED')) ||
@@ -305,6 +303,7 @@ export default function EventsScreen() {
     events,
     guildById,
     kindFilters,
+    myCharacterIds,
     partyById,
     searchQuery,
     selectedCharacter,
