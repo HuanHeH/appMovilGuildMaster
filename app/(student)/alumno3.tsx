@@ -254,6 +254,7 @@ export default function EventsScreen() {
         event.target_party_id === null &&
         (skill?.aoe === 'GUILD' || teacherExp);
       const affected = affectedByCharacter || affectedByParty || affectedByGuild;
+      if (!launched && !affected) return false;
       const kindAllowed =
         kindFilters.length === 0 ||
         (launched && kindFilters.includes('LAUNCHED')) ||

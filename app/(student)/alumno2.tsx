@@ -103,6 +103,7 @@ function withChangeJobFallback(apiSkills: Skill[]): Skill[] {
 
 function groupSkillsByLevel(allSkills: Skill[], character: Character): SkillsByLevel {
   const grouped = emptySkillsByLevel();
+  if (!character.job) return grouped;
   const catalog = withChangeJobFallback(allSkills);
 
   for (const skill of catalog) {
@@ -393,7 +394,9 @@ export default function SkillsScreen() {
     );
   }
 
-  const chooseClassCard = !selectedCharacter.job ? (
+  const needsClassChoice = !selectedCharacter.job;
+
+  const chooseClassCard = needsClassChoice ? (
     <Card mode="outlined" style={{ borderColor: GM.primary, borderWidth: 1, backgroundColor: GM.surfaceContainer }}>
       <Card.Content style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -447,7 +450,8 @@ export default function SkillsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 8 }}>
         {chooseClassCard}
-        {LEVEL_SECTIONS.map((level) => {
+        {!needsClassChoice
+          ? LEVEL_SECTIONS.map((level) => {
           const sectionSkills = skillsByLevel[level] ?? [];
           if (!sectionSkills.length) return null;
           const expanded = expandedLevels[level];
@@ -647,7 +651,8 @@ export default function SkillsScreen() {
               </View>
             </List.Accordion>
           );
-        })}
+        })
+          : null}
       </ScrollView>
 
       <Portal>
