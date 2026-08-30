@@ -49,6 +49,7 @@ import type { Character, CharacterJob, CreateEventRequest, Party, Skill } from '
 import {
   isAutoEventSkill,
   isChangeJobSkill,
+  isChooseClassSkill,
   isCommonSkill,
   isDebuffSkill,
   isProgressionSkill,
@@ -105,6 +106,7 @@ function groupSkillsByLevel(allSkills: Skill[], character: Character): SkillsByL
   const catalog = withChangeJobFallback(allSkills);
 
   for (const skill of catalog) {
+    if (isChooseClassSkill(skill)) continue; // handled by the dedicated Choose Class card
     if (skill.job !== character.job && !isCommonSkill(skill)) continue;
     if (!shouldShowSkillForCharacter(skill, character.level)) continue;
     const section = skillListSection(skill);
@@ -246,7 +248,20 @@ export default function SkillsScreen() {
     if (!selectedCharacter) return;
     try {
       setJobSelectSubmitting(true);
-      await setCharacterJob(selectedCharacter.id, job);
+      const chooseClassSkill = skills.find((s) => isChooseClassSkill(s));
+      if (chooseClassSkill) {
+        // Event-based flow: records an AUTO event + applies the job
+        await createEvent({
+          caster_character_id: selectedCharacter.id,
+          skill_id: chooseClassSkill.id,
+          guild_id: selectedCharacter.guild_id,
+          target_character_id: selectedCharacter.id,
+          comment: job,
+        });
+      } else {
+        // Fallback when the skill is not seeded: direct assign (no event)
+        await setCharacterJob(selectedCharacter.id, job);
+      }
       await refreshCharacters();
       setSnackbar(`You are now a ${job}!`);
     } catch (error) {
@@ -378,53 +393,36 @@ export default function SkillsScreen() {
     );
   }
 
-  if (!selectedCharacter.job) {
-    const JOB_INFO: Record<CharacterJob, { icon: string; color: string; desc: string; skills: string[] }> = {
-      Mage: {
-        icon: 'fire',
-        color: '#3b82f6',
-        desc: 'Spellcaster who deals magical damage to enemies.',
-        skills: ['Fireball — Deal damage to a single target', 'More skills unlock as you level up'],
-      },
-      Rogue: {
-        icon: 'knife',
-        color: '#22c55e',
-        desc: 'Stealthy attacker who excels at quick strikes.',
-        skills: ['Stealth-based abilities', 'More skills unlock as you level up'],
-      },
-      Paladin: {
-        icon: 'shield',
-        color: '#eab308',
-        desc: 'Holy warrior who combines defense and healing.',
-        skills: ['Defensive abilities', 'More skills unlock as you level up'],
-      },
-    };
-    return (
-      <View className={screenClass}>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} style={{ flex: 1 }}>
+  const chooseClassCard = !selectedCharacter.job ? (
+    <Card mode="outlined" style={{ borderColor: GM.primary, borderWidth: 1, backgroundColor: GM.surfaceContainer }}>
+      <Card.Content style={{ gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Icon source="help-circle" size={28} color={GM.primary} />
           <Text variant="titleMedium" style={{ color: GM.primary, fontWeight: '700' }}>Choose your class</Text>
-          <Text style={{ color: GM.onSurfaceVariant }}>
-            Your character <Text style={{ fontWeight: '700' }}>{selectedCharacter.name}</Text> doesn't have a class yet.
-            Pick one below to start using skills.
-          </Text>
+        </View>
+        <Text style={{ color: GM.onSurfaceVariant }}>
+          Your character <Text style={{ fontWeight: '700' }}>{selectedCharacter.name}</Text> doesn't have a class yet.
+          Pick one below to start using skills.
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {JOBS.map((job) => {
-            const info = JOB_INFO[job];
+            const info = {
+              Mage: { icon: 'fire', color: '#3b82f6', desc: 'Spellcaster — magical damage to single targets.' },
+              Rogue: { icon: 'knife', color: '#22c55e', desc: 'Stealthy attacker — quick strikes.' },
+              Paladin: { icon: 'shield', color: '#eab308', desc: 'Holy warrior — defense and healing.' },
+            }[job];
             return (
-              <Card key={job} mode="outlined" style={{ borderColor: info.color, borderWidth: 1 }}>
+              <Card key={job} mode="outlined" style={{ borderColor: info.color, borderWidth: 1, flex: 1, minWidth: 180 }}>
                 <Card.Content style={{ gap: 8 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Icon source={info.icon} size={28} color={info.color} />
-                    <Text variant="titleMedium" style={{ fontWeight: '700', color: info.color }}>{job}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Icon source={info.icon} size={22} color={info.color} />
+                    <Text style={{ fontWeight: '700', color: info.color }}>{job}</Text>
                   </View>
-                  <Text style={{ color: GM.onSurface }}>{info.desc}</Text>
-                  <Text style={{ color: GM.tertiary, fontSize: 13, fontWeight: '600' }}>Abilities:</Text>
-                  {info.skills.map((skill, i) => (
-                    <Text key={i} style={{ color: GM.onSurfaceVariant, fontSize: 13 }}>• {skill}</Text>
-                  ))}
+                  <Text style={{ color: GM.onSurfaceVariant, fontSize: 12 }}>{info.desc}</Text>
                   <Button
                     mode="contained"
                     buttonColor={info.color}
-                    style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                    style={{ marginTop: 4 }}
                     loading={jobSelectSubmitting}
                     disabled={jobSelectSubmitting}
                     onPress={() => chooseJob(job)}>
@@ -434,13 +432,10 @@ export default function SkillsScreen() {
               </Card>
             );
           })}
-        </ScrollView>
-        <Snackbar visible={Boolean(snackbar)} onDismiss={() => setSnackbar('')} duration={3500}>
-          {snackbar}
-        </Snackbar>
-      </View>
-    );
-  }
+        </View>
+      </Card.Content>
+    </Card>
+  ) : null;
 
   return (
     <View className={screenClass}>
@@ -451,6 +446,7 @@ export default function SkillsScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, gap: 8 }}>
+        {chooseClassCard}
         {LEVEL_SECTIONS.map((level) => {
           const sectionSkills = skillsByLevel[level] ?? [];
           if (!sectionSkills.length) return null;
