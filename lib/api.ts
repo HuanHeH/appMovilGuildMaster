@@ -16,18 +16,13 @@ import type {
 
 const PRODUCTION_API_BASE_URL = 'https://guildmasterapi.duckdns.org/api';
 
-/** Android emulator cannot reach host localhost — rewrite when .env.local points at local API. */
+/** Remote API from EXPO_PUBLIC_API_BASE_URL (.env.local / .env.example) or DuckDNS fallback. */
 function resolveApiBaseUrl(): string {
-  const configured = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
-  if (configured) {
-    if (Platform.OS === 'android' && /localhost|127\.0\.0\.1/i.test(configured)) {
-      return configured.replace(/localhost|127\.0\.0\.1/i, '10.0.2.2');
-    }
-    return configured;
+  const configured = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || PRODUCTION_API_BASE_URL;
+  if (Platform.OS === 'android' && /localhost|127\.0\.0\.1/i.test(configured)) {
+    return configured.replace(/localhost|127\.0\.0\.1/i, '10.0.2.2');
   }
-  if (Platform.OS === 'web') return PRODUCTION_API_BASE_URL;
-  if (Platform.OS === 'android') return 'http://10.0.2.2:8081/api';
-  return 'http://localhost:8081/api';
+  return configured;
 }
 
 export const api = create({

@@ -129,13 +129,18 @@ export function levelUpTargetLevel(skill: Skill): 2 | 3 | 4 | null {
 }
 
 export function isProgressionSkill(skill: Skill) {
-  return isLevelUpSkill(skill) || isChangeJobSkill(skill);
+  return isLevelUpSkill(skill) || isChangeJobSkill(skill) || isChooseClassSkill(skill);
 }
 
-/** Auto-resolved events: Teacher Grant/Remove EXP, Level Up, Change Job. */
+/** Auto-resolved events: Teacher Grant/Remove EXP, Level Up, Change Job, Choose Class. */
 export function isAutoEventSkill(skill: Skill | undefined): boolean {
   if (!skill) return false;
-  return isTeacherExpSkill(skill) || isLevelUpSkill(skill) || isChangeJobSkill(skill);
+  return (
+    isTeacherExpSkill(skill) ||
+    isLevelUpSkill(skill) ||
+    isChangeJobSkill(skill) ||
+    isChooseClassSkill(skill)
+  );
 }
 
 /** Hide obsolete Level Ups; Change Job always listed under Lvl 3 (locked until level 3 in UI). */

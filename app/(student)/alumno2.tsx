@@ -29,7 +29,6 @@ import {
   getCharacters,
   getParties,
   getSkills,
-  setCharacterJob,
 } from '@/lib/api';
 import { showConfirm } from '@/lib/alert';
 import {
@@ -250,19 +249,16 @@ export default function SkillsScreen() {
     try {
       setJobSelectSubmitting(true);
       const chooseClassSkill = skills.find((s) => isChooseClassSkill(s));
-      if (chooseClassSkill) {
-        // Event-based flow: records an AUTO event + applies the job
-        await createEvent({
-          caster_character_id: selectedCharacter.id,
-          skill_id: chooseClassSkill.id,
-          guild_id: selectedCharacter.guild_id,
-          target_character_id: selectedCharacter.id,
-          comment: job,
-        });
-      } else {
-        // Fallback when the skill is not seeded: direct assign (no event)
-        await setCharacterJob(selectedCharacter.id, job);
+      if (!chooseClassSkill) {
+        throw new Error('Choose Class skill is missing in the database. Ask your teacher or admin to add it.');
       }
+      await createEvent({
+        caster_character_id: selectedCharacter.id,
+        skill_id: chooseClassSkill.id,
+        guild_id: selectedCharacter.guild_id,
+        target_character_id: selectedCharacter.id,
+        comment: job,
+      });
       await refreshCharacters();
       setSnackbar(`You are now a ${job}!`);
     } catch (error) {
